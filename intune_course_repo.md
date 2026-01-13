@@ -137,25 +137,6 @@ This comprehensive Microsoft Intune training course provides hands-on labs and p
 - Access to Windows 10/11, iOS, or Android test devices
 - Basic PowerShell knowledge (for advanced modules)
 
-### Setup Instructions
-1. Clone this repository
-```bash
-git clone https://github.com/yourusername/intune-training-course.git
-cd intune-training-course
-```
-
-2. Follow the setup guide in [Module 3 - Getting Started](./Module-03-Getting-Started)
-
-3. Create your trial tenant using [Lab 3.1 instructions](./Module-03-Getting-Started/Lab-3.1-Create-Trial-Tenant.md)
-
-## 📖 How to Use This Repository
-
-Each module folder contains:
-- **README.md** - Module overview and learning objectives
-- **Labs/** - Step-by-step lab instructions with screenshots
-- **Resources/** - Additional reading materials and references
-- **Scripts/** - PowerShell scripts and automation examples
-- **Quiz.md** - Knowledge check questions
 
 ## 🛠️ Lab Environment Requirements
 
@@ -176,41 +157,6 @@ Each module folder contains:
 - Azure Portal access
 - Microsoft Graph Explorer
 
-## 📝 Documentation Standards
-
-All labs follow this structure:
-- **Objective** - What you'll accomplish
-- **Prerequisites** - What you need before starting
-- **Estimated Time** - How long the lab takes
-- **Step-by-Step Instructions** - Detailed guidance with screenshots
-- **Verification** - How to confirm success
-- **Troubleshooting** - Common issues and solutions
-- **Clean Up** - How to remove lab resources
-
-## 🎓 Certification Preparation
-
-This course aligns with:
-- **MD-102**: Endpoint Administrator
-- **MS-101**: Microsoft 365 Mobility and Security
-
-Additional certification resources in [Module 11](./Module-11-Capstone-Project/Certification-Resources.md)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting pull requests.
-
-### How to Contribute
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-lab`)
-3. Commit your changes (`git commit -am 'Add new lab'`)
-4. Push to the branch (`git push origin feature/new-lab`)
-5. Create a Pull Request
-
-## 📧 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/intune-training-course/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/intune-training-course/discussions)
-- **Email**: support@example.com
 
 ## 📄 License
 
