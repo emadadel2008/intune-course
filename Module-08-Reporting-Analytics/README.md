@@ -1,381 +1,541 @@
 # Module 08: Reporting & Analytics
 
-[![Module Status](https://img.shields.io/badge/Status-Active-success)](https://github.com)
-[![Labs](https://img.shields.io/badge/Labs-4-blue)](README.md)
-[![Duration](https://img.shields.io/badge/Duration-4--5%20hours-orange)](README.md)
+## Module Overview
+
+Visibility into your endpoint environment is essential for maintaining security, compliance, and operational health. Microsoft Intune provides a rich set of built-in reports, Endpoint Analytics insights, and integrations with Azure Monitor Log Analytics and Power BI that give administrators a comprehensive picture of device status, app health, and user productivity. In this module, you will explore every major reporting surface available in Intune, learn how to query raw telemetry with Kusto Query Language (KQL), and build custom dashboards that surface actionable insights for your organization.
 
 ---
 
-## 📋 Module Overview
-
-Microsoft Intune provides rich reporting and analytics capabilities to help administrators understand the state of their device fleet, track compliance, monitor application deployments, and identify issues before they impact users. This module covers built-in Intune reports, Endpoint Analytics, Log Analytics integration, and custom reporting using KQL queries and Power BI.
-
----
-
-## 🎯 Learning Objectives
+## Learning Objectives
 
 By the end of this module, you will be able to:
 
-- **Navigate** the Intune built-in reports for devices, apps, and compliance
-- **Enable and interpret** Endpoint Analytics data (startup performance, app reliability)
-- **Connect** Intune to a Log Analytics workspace for advanced querying
-- **Write** basic KQL queries to extract compliance and device insights
-- **Monitor** application installation status per device and per app
-- **Export** reports and integrate with Power BI for dashboards
-- **Configure** diagnostic settings for audit and operational logs
-- **Identify** non-compliant devices and track remediation progress
+- Navigate and interpret the built-in Intune reports for device compliance, configuration, and app status
+- Enable and configure Endpoint Analytics to measure startup performance, app reliability, and the Work from Anywhere score
+- Connect Intune diagnostic data to an Azure Monitor Log Analytics workspace
+- Write KQL queries to correlate Intune data with other Azure and Microsoft 365 telemetry
+- Integrate Intune reporting data with Power BI for executive-level dashboards
+- Monitor application installation status and investigate deployment failures
+- Build custom reports using the Microsoft Graph API OData export endpoint
+- Establish a proactive compliance monitoring and remediation workflow
 
 ---
 
-## 📚 Key Topics
+## Key Topics
 
 ### 1. Intune Built-In Reports
 
-Intune includes a dedicated **Reports** section with organised categories:
+Microsoft Intune includes a dedicated **Reports** node in the Microsoft Intune admin center ([intune.microsoft.com](https://intune.microsoft.com)). Reports are organized by workload:
 
-#### Report Categories
-| Category | Examples |
-|----------|---------|
-| **Device Management** | Enrolled devices, device inventory, managed device details |
-| **Endpoint Analytics** | Startup score, app reliability, work from anywhere |
-| **App Management** | App install status, app protection status, MAM reports |
-| **Device Compliance** | Compliance status, non-compliant devices, per-policy status |
-| **Security** | Encryption report, Windows health attestation |
-| **Audit Logs** | Admin activity, change history |
+| Report Category | Examples |
+|---|---|
+| **Device compliance** | Compliance by policy, noncompliant devices, compliance trend |
+| **Device configuration** | Assignment failures, settings conflicts |
+| **Endpoint security** | Antivirus status, firewall status, encryption status (BitLocker) |
+| **Apps** | App install status, app protection policy status, discovered apps |
+| **Updates** | Windows Update for Business compliance, feature update status |
+| **Enrollment** | Enrollment failures, autopilot deployments |
 
-#### Accessing Reports
-- **Intune Admin Center** > **Reports** (dedicated reports hub)
-- **Devices** > individual device > view per-device reports
-- **Apps** > individual app > installation status
+Key capabilities:
 
-#### Exporting Reports
-- All reports support **CSV export**
-- Graph API supports programmatic report export: `GET /deviceManagement/reports`
+- **Filter and sort** report data by OS platform, policy, user, device, or compliance state
+- **Export to CSV** for offline analysis or integration into other tools
+- **Trend views** show compliance changes over a configurable time window (7, 14, or 30 days)
+- Reports are near-real-time; most refresh within 24 hours, some within minutes
 
 ---
 
 ### 2. Endpoint Analytics
 
-Endpoint Analytics is part of Microsoft Productivity Score and provides device experience insights.
+**Endpoint Analytics** is a cloud-native analytics service that measures end-user experience metrics and provides recommendations to improve productivity and reduce support costs. It is accessible from the **Reports > Endpoint Analytics** blade.
 
-#### Key Scores
-| Score | What It Measures |
-|-------|-----------------|
-| **Startup performance** | Boot time, sign-in time, time to responsive desktop |
-| **App reliability** | App crash and hang rates |
-| **Work from anywhere** | Cloud management, cloud identity, cloud provisioning readiness |
-| **Battery health** | Estimated battery capacity vs design capacity |
-| **Resource performance** | CPU/RAM spike frequency |
+#### Key Scores and Metrics
 
-#### Requirements
-- Devices must be enrolled in Intune (MDM managed)
-- Windows 10 1903+ or Windows 11
-- Intune connector to Log Analytics (optional, for custom queries)
+| Metric | Description |
+|---|---|
+| **Endpoint Analytics score** | Composite score (0-100) representing overall endpoint health |
+| **Startup performance score** | Time-to-productive based on boot and sign-in duration |
+| **App reliability score** | Mean time between app crashes weighted by usage frequency |
+| **Work from Anywhere score** | Readiness for cloud-managed, location-independent work |
+| **Battery health** | Estimated battery capacity vs. design capacity across the fleet |
 
-#### Baseline Comparison
-Endpoint Analytics lets you compare your organisation scores against:
-- **All organisations** median
-- **Similar organisations** (by size/industry)
+#### Startup Performance Drill-Down
 
----
+- **Boot score**: Core boot, Group Policy processing, user profile load, desktop ready
+- **Sign-in score**: Credential provider, background processes, shell ready
+- Identifies top processes delaying startup so you can target remediation scripts
 
-### 3. Log Analytics Integration
+#### Proactive Remediations (Remediations)
 
-Log Analytics is an Azure Monitor workspace that stores Intune diagnostic data for advanced analysis.
+Endpoint Analytics includes a **Remediations** feature (formerly Proactive Remediations) that runs script pairs (detect + remediate) on a schedule. Common use cases:
 
-#### Data Sent to Log Analytics
-- Compliance policy results (`IntuneDeviceComplianceOrg`)
-- Device configuration profiles (`IntuneDeviceConfigurationAndPolicy`)
-- Audit logs (`AuditLogs`)
-- Operational logs (`IntuneOperationalLogs`)
-- Enrollment logs
-
-#### KQL Query Examples
-
-**Non-compliant devices:**
-```kql
-IntuneDeviceComplianceOrg
-| where ComplianceState == "noncompliant"
-| project DeviceName, UserName, OS, ComplianceState, LastContact
-| order by LastContact desc
-```
-
-**Device compliance trend over 7 days:**
-```kql
-IntuneDeviceComplianceOrg
-| summarize CompliantCount = countif(ComplianceState == "compliant"),
-            NonCompliantCount = countif(ComplianceState == "noncompliant")
-            by bin(TimeGenerated, 1d)
-| render timechart
-```
-
-**App installation failures:**
-```kql
-IntuneOperationalLogs
-| where OperationName == "ApplicationInstallation"
-| where Result == "Failure"
-| project TimeGenerated, DeviceName, ApplicationName, ErrorCode
-| order by TimeGenerated desc
-```
+- Detect and clear stale Windows Update cache
+- Detect and re-enroll devices with expired certificates
+- Detect and fix misconfigured DNS suffixes
 
 ---
 
-### 4. Compliance Monitoring and Remediation
+### 3. Log Analytics Workspace Integration
 
-#### Compliance Dashboard
-The Intune compliance dashboard shows:
-- Total devices and compliance breakdown (pie chart)
-- Trends over time
-- Per-policy compliance breakdown
-- Per-setting compliance status
+Intune can stream diagnostic data to an **Azure Monitor Log Analytics workspace** via **Diagnostic settings**. This unlocks:
 
-#### Compliance Actions
-For non-compliant devices, you can automate:
-- Email notification to user
-- Push notification via Company Portal
-- Remote lock after grace period
-- Device retirement after extended non-compliance
+- Long-term retention beyond Intune's 30-day built-in window
+- Correlation with Azure AD, Defender for Endpoint, and other data sources
+- Advanced KQL queries and workbooks
+- Alerting via Azure Monitor alert rules
 
-#### Proactive Remediations (Endpoint Analytics)
-Proactive Remediations run detection and remediation scripts on schedule:
-- **Detection script**: checks for an issue (exits 1 if issue found)
-- **Remediation script**: fixes the issue
-- Results are viewable per device in the Endpoint Analytics portal
+#### Supported Data Categories
+
+| Category | Log Table |
+|---|---|
+| Audit logs | `IntuneAuditLogs` |
+| Operational logs | `IntuneOperationalLogs` |
+| Device compliance org | `IntuneDeviceComplianceOrg` |
+| Device configuration | `IntuneDevices` |
+| Enrollment failures | `IntuneDeviceEnrollmentFailures` |
+
+#### Prerequisites
+
+- An Azure subscription with a Log Analytics workspace
+- Intune Administrator role (or Global Administrator)
+- Diagnostic settings configured under **Tenant administration > Diagnostic settings**
+
+---
+
+### 4. Microsoft Monitoring Agent / Diagnostic Data
+
+Intune collects device-side diagnostic data through several channels:
+
+- **Windows Diagnostic Data** (telemetry): Required for Endpoint Analytics; minimum level is **Required** (formerly Basic). Set via Device Configuration profile > Reporting and Telemetry.
+- **Intune Management Extension (IME) logs**: Collected automatically for Win32 app deployments and PowerShell scripts. Viewable in the admin center under the device's **Managed apps** blade.
+- **Device diagnostics collection**: Administrators can trigger on-demand log collection from a device's **Device diagnostics** action. Logs are uploaded to the admin center and retained for 28 days.
+- **Windows health monitoring**: A Device Configuration profile type that enables collection of Windows event log channels into Endpoint Analytics.
 
 ---
 
 ### 5. Power BI Integration
 
-For custom dashboards, connect Power BI to Intune via:
-1. **Intune Data Warehouse** (OData feed)
-2. **Log Analytics** (Power BI connector)
-3. **Graph API** (custom connector)
+Intune data can be visualized in **Power BI** using two primary methods:
 
-#### Intune Data Warehouse OData Feed
-```
-https://fef.msua06.manage.microsoft.com/ReportingService/DataWarehouseFEService?api-version=v1.0
-```
-Use this as the OData source in Power BI Desktop.
+#### Method A — Intune Data Warehouse (OData)
+
+- Navigate to **Reports > Intune Data Warehouse** to obtain the OData feed URL
+- Connect Power BI Desktop using **Get Data > OData Feed**
+- Authenticate with your Entra ID (Azure AD) credentials
+- Tables include `devices`, `users`, `devicePropertyHistories`, `mobileApps`, and more
+- Schedule automatic refresh via Power BI Service with a gateway or service principal
+
+#### Method B — Log Analytics Connector
+
+- Use the **Azure Monitor (Log Analytics)** connector in Power BI Desktop
+- Query `IntuneDeviceComplianceOrg`, `IntuneAuditLogs`, etc. directly with KQL
+- Combine with other Azure data sources in the same Power BI report
+
+#### Report Design Tips
+
+- Use slicers for **OS platform**, **compliance state**, and **enrollment date**
+- Add KPI cards for noncompliant device count and compliance percentage
+- Schedule daily refresh to keep dashboards current
 
 ---
 
-## 🧪 Hands-On Labs
+### 6. Compliance Monitoring and Remediation
+
+A proactive compliance posture requires continuous monitoring, not just point-in-time reports.
+
+#### Recommended Workflow
+
+1. **Define compliance policies** with clear marking periods (grace periods of 1-3 days for minor issues)
+2. **Create device groups** based on compliance state using dynamic Azure AD groups (`(device.deviceComplianceStatus -eq "Noncompliant")`)
+3. **Configure conditional access** to block or limit noncompliant devices from accessing corporate resources
+4. **Set up email notifications** (Actions for noncompliance) to alert end users and IT helpdesk
+5. **Review the Compliance trend report** weekly; set a compliance target (e.g., >= 95%)
+6. **Use Endpoint Analytics Remediations** to auto-remediate known issues
+
+#### Noncompliance Actions
+
+| Action | Timing | Use Case |
+|---|---|---|
+| Send email to user | Immediately | Inform user their device is noncompliant |
+| Mark device noncompliant | After grace period | Trigger conditional access |
+| Remotely lock device | After N days | High-security scenarios |
+| Retire device | After extended period | Abandoned or lost devices |
 
 ---
+
+### 7. Custom Reports Using OData / Graph API Exports
+
+For organizations with advanced reporting needs, the **Microsoft Graph API** provides programmatic access to Intune data.
+
+#### OData Export Endpoint
+
+```
+GET https://graph.microsoft.com/v1.0/deviceManagement/reports/exportJobs
+```
+
+Supported report names include `DeviceCompliance`, `DeviceInstallStatusByApp`, `UserInstallStatusAggregateByApp`, and more.
+
+#### Example: Trigger a Compliance Export
+
+```http
+POST https://graph.microsoft.com/v1.0/deviceManagement/reports/exportJobs
+Content-Type: application/json
+
+{
+  "reportName": "DeviceCompliance",
+  "filter": "",
+  "select": ["DeviceId","DeviceName","ComplianceState","OS","LastContact"],
+  "format": "csv"
+}
+```
+
+Poll the returned `id` until `status` is `completed`, then download the CSV from the `url` property.
+
+#### PowerShell Automation
+
+Use the **Microsoft.Graph** PowerShell module to automate report generation and delivery:
+
+```powershell
+Connect-MgGraph -Scopes "DeviceManagementManagedDevices.Read.All"
+$job = New-MgDeviceManagementReportExportJob -ReportName "DeviceCompliance" -Format "csv"
+# Poll until complete, then Invoke-WebRequest $job.Url -OutFile "compliance.csv"
+```
+
+---
+
+## Hands-On Labs
 
 ### Lab 8.1: Review Device Compliance Reports
 
-**Objective**: Navigate Intune built-in reports to identify non-compliant devices and compliance trends
+**Objective:** Navigate the built-in compliance reports, apply filters, interpret the data, and export results for offline review.
 
-**Steps**:
+**Prerequisites:**
+- Microsoft Intune admin center access
+- At least one compliance policy assigned to devices
+- Devices enrolled and reporting compliance state
 
-1. Sign in to [https://intune.microsoft.com](https://intune.microsoft.com)
-2. Navigate to **Reports** in the left navigation
-3. Under **Device compliance**, click **Compliance report (Organisational)**
-4. Review the compliance status pie chart — note the percentage of compliant vs non-compliant devices
-5. Click **Generate report** to get a detailed device list
-6. Filter by **Compliance status = Not compliant** to see only failing devices
-7. Click on a non-compliant device to view which specific settings are failing
-8. Navigate to **Reports** > **Device compliance** > **Setting compliance**
-9. Review which individual compliance settings are most frequently failing across your device fleet
-10. Click **Export** to download the report as a CSV file
-11. Navigate to **Devices** > **Monitor** > **Noncompliant devices** for a quick view
-12. Document any patterns you observe (e.g., all failures on BitLocker requirement)
+**Steps:**
 
-**Expected Outcome**: You can identify specific non-compliant devices, which settings are failing, and export data for further analysis
+1. Sign in to the **Microsoft Intune admin center** at [https://intune.microsoft.com](https://intune.microsoft.com) using an account with the **Intune Administrator** or **Read Only Operator** role.
+
+2. In the left navigation pane, select **Reports**. On the Reports Overview page, review the summary tiles showing compliant vs. noncompliant device counts.
+
+3. Select **Device compliance > Reports > Device compliance**. Wait for the report to load. Note the columns: Device name, User, OS, Compliance state, Last check-in.
+
+4. Click **Add filter** and add the following filters:
+   - **OS**: Windows 10 and later
+   - **Compliance**: Noncompliant
+
+   Click **Apply**. Observe that the list now shows only noncompliant Windows devices.
+
+5. Click on any device name in the list to open its **Device compliance detail** panel. Review which specific compliance settings are failing (e.g., BitLocker not enabled, OS version below minimum).
+
+6. Return to the report list. Click **Add filter > Last check-in** and set the range to the last **7 days**. This identifies devices that have recently checked in.
+
+7. Click the **Columns** button and add **Device ID**, **Serial number**, and **Ownership** (Corporate vs. Personal) to the view.
+
+8. Click **Export** (top-right of the report) and save the CSV file to your workstation. Open it in Excel and create a pivot table summarizing noncompliant devices by OS version.
+
+9. Navigate to **Reports > Device compliance > Compliance trend**. Set the time window to **30 days**. Note any spikes or drops in compliance percentage and correlate them to recent policy changes.
+
+10. Navigate to **Reports > Endpoint security > Antivirus agent status**. Confirm that all enrolled devices show **Reporting** status for Microsoft Defender Antivirus.
+
+**Expected Outcome:** You can confidently navigate compliance reports, isolate noncompliant devices by platform, drill into per-device failure reasons, and export data for stakeholder reporting.
 
 ---
 
 ### Lab 8.2: Enable Endpoint Analytics
 
-**Objective**: Enable Endpoint Analytics and review device startup performance scores
+**Objective:** Onboard devices to Endpoint Analytics, enable data collection, connect to a Log Analytics workspace, and interpret the initial scores.
 
-**Steps**:
+**Prerequisites:**
+- Microsoft Intune admin center access with Intune Administrator role
+- An Azure subscription with Owner or Contributor access
+- Windows 10 (1903+) or Windows 11 devices enrolled in Intune
+- Devices must send Windows Required (Basic) telemetry or higher
 
-1. In the Intune admin center, navigate to **Reports** > **Endpoint Analytics**
-2. Click **Start** on the Endpoint Analytics overview page (first-time setup)
-3. Review the **Baseline scores** — note your organisation score vs the median
-4. Click **Startup performance** in the left menu
-5. Review the **Startup score** chart and the **Top startup processes** table
-6. Identify devices with the longest boot times by sorting the device list by **Time to responsive desktop**
-7. Click on a specific device to see its detailed startup timeline (GP processing, service startup, etc.)
-8. Navigate to **App reliability** and review the **App reliability score**
-9. View the **Top apps impacting reliability** — these are apps with high crash/hang rates
-10. Navigate to **Work from anywhere** and review cloud management, identity, and provisioning scores
-11. Click **Settings** > **Baseline** and compare against All organisations
-12. Note which categories are below the median and note them for improvement planning
+**Steps:**
 
-**Expected Outcome**: You have an overview of device experience health and can identify specific devices and apps that are degrading performance scores
+1. In the **Microsoft Intune admin center**, navigate to **Reports > Endpoint Analytics**.
+
+2. If this is the first time enabling Endpoint Analytics, click **Start**. Read the data-sharing notice and click **Start** again to confirm.
+
+3. Navigate to **Endpoint Analytics > Settings**. Under **Intune data collection policy**, confirm that the toggle is set to **Enabled**. Click **Save** if you make any changes.
+
+4. To ensure devices send the required telemetry, navigate to **Devices > Configuration > Create > New policy**. Select:
+   - Platform: **Windows 10 and later**
+   - Profile type: **Settings catalog**
+   
+   Search for **Allow Telemetry** and set it to **Required (1)**. Assign the profile to your pilot device group and click **Create**.
+
+5. Return to **Reports > Endpoint Analytics**. The **Endpoint Analytics score** card will initially show **No data** for new tenants. Scores typically populate within 24-48 hours after devices check in.
+
+6. Once data is available, click **Startup performance**. Review the list of devices sorted by startup duration. Identify the top 5 slowest-booting devices.
+
+7. Click on one of the slow-booting devices. Review the **Boot process** timeline showing each phase: Pre-boot, Boot, Group Policy, Desktop. Note which phase is consuming the most time.
+
+8. Navigate to **App reliability** under Endpoint Analytics. Review the **App reliability score** and identify any apps with frequent crashes or hangs. Click on an app name to see affected devices.
+
+9. Navigate to **Work from Anywhere**. Review each category score: Cloud management, Cloud identity, Cloud provisioning. Note any categories scoring below 50 and review the associated recommendations.
+
+10. Under **Remediations**, review any available Microsoft-provided script packages. Click **+ Create script package** to explore creating a custom detect/remediate script pair for your environment.
+
+**Expected Outcome:** Endpoint Analytics is enabled, devices are enrolled and sending telemetry, and you can read startup performance scores, app reliability data, and Work from Anywhere recommendations.
 
 ---
 
-### Lab 8.3: Create a Custom Report with Log Analytics
+### Lab 8.3: Create Custom Report with Log Analytics
 
-**Objective**: Connect Intune to a Log Analytics workspace and run KQL queries on compliance data
+**Objective:** Configure Intune Diagnostic settings to stream data to a Log Analytics workspace, then write KQL queries to build a custom compliance dashboard.
 
-**Steps**:
+**Prerequisites:**
+- Azure subscription with a Log Analytics workspace (or permission to create one)
+- Intune Administrator role and Azure Contributor role
+- At least 24 hours of data streaming (if configuring for the first time)
 
-1. In the Azure Portal ([https://portal.azure.com](https://portal.azure.com)), create a Log Analytics workspace:
-   - Navigate to **Log Analytics workspaces** > **+ Create**
-   - Resource group: use your Intune lab resource group
-   - Name: `intune-lab-logs`
-   - Region: choose the same region as your tenant
-   - Click **Review + create** > **Create**
-2. Back in the Intune admin center, navigate to **Reports** > **Diagnostic settings**
-3. Click **+ Add diagnostic setting**
-4. Name it `Intune-to-LogAnalytics`
-5. Check these log categories:
-   - ✅ AuditLogs
-   - ✅ OperationalLogs
-   - ✅ DeviceComplianceOrg
-   - ✅ DeviceConfigurationAndPolicy
-6. Under **Destination details**, select **Send to Log Analytics workspace** and select `intune-lab-logs`
-7. Click **Save**
-8. Wait 15–30 minutes for data to begin flowing
-9. Return to the Log Analytics workspace > **Logs**
-10. Run this query to see compliance data:
-```kql
-IntuneDeviceComplianceOrg
-| where TimeGenerated > ago(1d)
-| summarize count() by ComplianceState
-| render piechart
-```
-11. Run this query to find non-compliant devices:
-```kql
-IntuneDeviceComplianceOrg
-| where ComplianceState == "noncompliant"
-| project DeviceName, UserName, OS, ComplianceState, PolicyName
-| order by DeviceName asc
-```
-12. Click **Save** > **Save as query** to save for future use
+**Steps:**
 
-**Expected Outcome**: Intune compliance data flows into Log Analytics and you can query it with KQL to produce custom compliance insights
+1. In the **Azure portal** ([portal.azure.com](https://portal.azure.com)), navigate to **Log Analytics workspaces**. Create a new workspace (or select an existing one):
+   - Subscription: Your Azure subscription
+   - Resource group: `rg-intune-monitoring`
+   - Name: `law-intune-prod`
+   - Region: Select your preferred region
+   
+   Click **Review + Create**, then **Create**.
+
+2. In the **Microsoft Intune admin center**, navigate to **Tenant administration > Diagnostic settings**. Click **+ Add diagnostic setting**.
+
+3. In the Diagnostic setting blade, provide a name (e.g., `Intune-to-LogAnalytics`). Check the following log categories:
+   - **AuditLogs**
+   - **OperationalLogs**
+   - **DeviceComplianceOrg**
+   - **Devices**
+
+4. Under **Destination details**, check **Send to Log Analytics workspace**. Select your subscription and the `law-intune-prod` workspace. Click **Save**.
+
+5. Wait at least 15-30 minutes for initial data to flow. In the **Azure portal**, navigate to your Log Analytics workspace and select **Logs**.
+
+6. In the KQL query editor, run the following query to view the most recently noncompliant devices:
+
+   ```kql
+   IntuneDeviceComplianceOrg
+   | where TimeGenerated > ago(7d)
+   | where ComplianceState == "noncompliant"
+   | project TimeGenerated, DeviceName, UserName, OS, OSVersion, ComplianceState, LastContact
+   | order by LastContact desc
+   | take 50
+   ```
+
+7. Extend the query to summarize noncompliance by OS version and visualize as a bar chart:
+
+   ```kql
+   IntuneDeviceComplianceOrg
+   | where TimeGenerated > ago(7d)
+   | where ComplianceState == "noncompliant"
+   | summarize NoncompliantCount = count() by OS, OSVersion
+   | order by NoncompliantCount desc
+   | render barchart
+   ```
+
+8. Run a query to identify devices that have not checked in for more than 14 days:
+
+   ```kql
+   IntuneDeviceComplianceOrg
+   | where TimeGenerated > ago(1d)
+   | extend LastContactDate = todatetime(LastContact)
+   | where LastContactDate < ago(14d)
+   | project DeviceName, UserName, OS, LastContact, ComplianceState
+   | order by LastContactDate asc
+   ```
+
+9. Click **Save > Save as query**. Name the query `Noncompliant Devices - Last 7 Days` and save it to the **Shared queries** section so other team members can use it.
+
+10. Click **Pin to dashboard** on one of your query result charts. Create a new Azure dashboard named `Intune Compliance Dashboard`. Add all three query results as tiles.
+
+**Expected Outcome:** Intune diagnostic data flows into Log Analytics, you can write KQL queries to analyze compliance and check-in data, and you have a pinned Azure dashboard with live compliance charts.
 
 ---
 
 ### Lab 8.4: Monitor Application Installation Status
 
-**Objective**: Review per-device and per-app installation status, identify failures, and investigate error codes
+**Objective:** Review per-device and per-app installation status reports to identify deployment failures and investigate root causes using IME logs.
 
-**Steps**:
+**Prerequisites:**
+- At least one Win32 app or Microsoft Store app deployed via Intune
+- Devices enrolled with the Intune Management Extension (IME) installed
+- Intune Administrator or Help Desk Operator role
 
-1. In Intune, navigate to **Apps** > **All apps**
-2. Select an application you deployed in Module 05 (e.g., Microsoft 365 Apps or your LOB app)
-3. Click on the app and select **Device install status** from the monitor section
-4. Review the installation status for each device:
-   - ✅ Installed
-   - ⏳ Install pending
-   - ❌ Failed
-   - ℹ️ Not applicable
-5. Filter by **Install status = Failed** to focus on problem devices
-6. Click on a failed device to view the **Error code** and **Error description**
-7. Note the error code and search the [Intune troubleshooting documentation](https://docs.microsoft.com/en-us/mem/intune/apps/troubleshoot-app-install)
-8. Navigate to **Reports** > **App management** > **App install status report**
-9. Click **Generate report** and filter by a specific app
-10. Export the CSV and review in Excel for a broader view
-11. Navigate to **Devices** > select a specific device > **App install status**
-12. Review all apps assigned to that device and their installation states
+**Steps:**
 
-**Expected Outcome**: You can track application deployment success rates per app and per device, and identify specific error codes for failed installations
+1. In the **Microsoft Intune admin center**, navigate to **Apps > All apps**. Search for and select the app you want to investigate (e.g., `7-Zip`, `Microsoft Teams`, or a custom Line of Business app).
 
----
+2. In the app's **Overview** blade, review the **Device install status** and **User install status** summary tiles. Note the counts for Installed, Failed, Pending, and Not Applicable.
 
-## ✅ Best Practices
+3. Select **Device install status** from the Monitor section. The report shows every assigned device and its install state. Apply a filter:
+   - **Install status**: Failed
+   
+   This isolates all devices where the app failed to install.
 
-**Do's**:
-- ✅ Review the compliance dashboard weekly and set up alerts for spikes in non-compliance
-- ✅ Use Endpoint Analytics startup scores to proactively identify aging hardware
-- ✅ Enable Log Analytics integration early — data is not backfilled
-- ✅ Save frequently-used KQL queries in Log Analytics for quick reuse
-- ✅ Export compliance reports before major policy changes as a baseline
-- ✅ Use Proactive Remediations to auto-fix common issues before they escalate
-- ✅ Set up compliance email notifications so users know when their device is non-compliant
-- ✅ Share Endpoint Analytics reports with leadership as part of IT health dashboards
+4. Click on a failed device to open its device detail page. Under **Managed apps**, locate the app entry. Review the **Installation details** field which shows the MSI exit code or Win32 app detection rule result.
 
-**Don'ts**:
-- ❌ Don't rely solely on the overview dashboard — drill into per-device details for accuracy
-- ❌ Don't ignore persistent app installation failures — they indicate a systemic issue
-- ❌ Don't overlook audit logs — they're essential for change management and security investigations
-- ❌ Don't skip the Log Analytics setup — built-in reports have limited retention
-- ❌ Don't share exported reports externally without removing PII (usernames, device names)
-- ❌ Don't use Endpoint Analytics scores as the only hardware refresh metric
+5. On the same device page, click **Collect diagnostics** (under the **...** More actions menu). Confirm the collection request. This triggers log upload from the device.
+
+6. After a few minutes, refresh the device page. Under **Device diagnostics**, download the collected diagnostics ZIP file. Extract it and navigate to `\MDMDiagReport\` to find the `IntuneManagementExtension.log`.
+
+7. Open `IntuneManagementExtension.log` in a text editor or CMTrace log viewer. Search for the failing app's **app ID** (visible in the Intune admin center URL when viewing the app). Look for error lines such as:
+   - `Installation failed with exit code 1603` (MSI general failure)
+   - `Detection failed` (app installed but detection rule returned false)
+   - `Download failed` (connectivity or storage issue)
+
+8. Return to the admin center. Navigate to **Apps > All apps > [App name] > User install status**. Review whether failures are associated with specific users or groups, which may indicate a permission or profile issue.
+
+9. Navigate to **Reports > Apps > App install status report**. Set the filter to your app. Export the CSV report and confirm it matches what you saw in the per-app view.
+
+10. If you identified a fix (e.g., corrected detection rule, updated installer), navigate to **Apps > [App name] > Properties** and update the relevant setting. Click **Save**. Then go to **Device install status**, select a failed device, and click **Retry** to trigger a fresh installation attempt.
+
+**Expected Outcome:** You can locate app deployment failures at the per-device level, collect and interpret IME diagnostic logs to determine root cause, and initiate remediation steps for failed installations.
 
 ---
 
-## 🔧 Common Issues and Troubleshooting
+## Best Practices
+
+### Do's
+
+- ✅ **Enable Endpoint Analytics** from the start of your Intune deployment to establish a performance baseline before any remediation work
+- ✅ **Stream diagnostic data** to Log Analytics for all production tenants to enable long-term trend analysis and auditing
+- ✅ **Export compliance reports** on a scheduled basis (weekly or monthly) and store them for audit and regulatory purposes
+- ✅ **Use dynamic Azure AD groups** based on compliance state to automatically scope conditional access and remediation policies
+- ✅ **Set a compliance grace period** (1-3 days) to allow devices time to self-remediate before being blocked
+- ✅ **Review the Work from Anywhere score** quarterly and use its recommendations to improve cloud management readiness
+- ✅ **Monitor IME logs** for Win32 app deployments in staging before wide rollout to catch installation failures early
+- ✅ **Use named KQL queries** in Log Analytics and share them with your team to standardize reporting
+
+### Don'ts
+
+- ❌ **Do not rely solely on the 30-day Intune report window** for compliance history; use Log Analytics for retention beyond 30 days
+- ❌ **Do not ignore the Enrollment failure report**; unresolved enrollment failures silently reduce your managed device coverage
+- ❌ **Do not grant broad Global Administrator access** just for reporting; use the built-in **Intune Read Only Operator** role for read-only access
+- ❌ **Do not overlook the App reliability score**; poor app reliability is a leading indicator of user productivity loss and help desk ticket volume
+- ❌ **Do not publish Power BI reports** containing device or user PII to external audiences without appropriate data governance controls
+- ❌ **Do not skip the detection rule validation** for Win32 apps; a misconfigured detection rule causes Intune to report failure even when the app is installed correctly
+
+---
+
+## Common Issues and Troubleshooting
 
 | Issue | Cause | Solution |
-|-------|-------|----------|
-| **Compliance report shows stale data** | Device hasn't checked in recently | Force sync from Intune portal; check device connectivity |
-| **No data in Log Analytics** | Diagnostic settings not configured | Verify diagnostic settings are saved and data type is selected |
-| **KQL query returns no results** | Data hasn't started flowing yet | Wait 15–30 mins after enabling; verify workspace is linked correctly |
-| **Endpoint Analytics score is N/A** | Device doesn't meet requirements | Verify Windows 10 1903+ and Intune enrollment |
-| **App installation status stuck at "Pending"** | Device offline or assignment not processed | Verify device is online, trigger sync, check assignment group |
-| **Proactive Remediation not running** | Script syntax error or wrong device scope | Test script manually on a device; check assignment group |
-| **Power BI OData feed fails to connect** | Authentication or permission issue | Ensure admin has Intune Service Administrator role; re-authenticate |
+|---|---|---|
+| Endpoint Analytics shows "No data" after 48 hours | Devices not sending Required telemetry; IME not installed | Verify the **Allow Telemetry** CSP setting is set to Required (1) or higher via a configuration profile; confirm IME is installed for Windows devices |
+| Log Analytics tables are empty after enabling Diagnostic settings | Propagation delay or misconfigured Diagnostic settings | Allow up to 1 hour for initial data; verify the correct workspace is selected and the log categories are checked in Diagnostic settings |
+| Compliance report shows devices as "Not evaluated" | Compliance policy not assigned to the device or device group | Review policy assignments and confirm the device is a member of the targeted group; trigger a device sync |
+| App install shows "Failed" with exit code 1603 | Windows Installer internal error; often a conflicting installation or missing prerequisite | Check if a previous version of the app is already installed; review system event logs on the device; ensure SYSTEM account has write access to the install directory |
+| Power BI OData refresh fails with 401 Unauthorized | The authenticating account's token has expired or lacks permissions | Re-enter credentials in Power BI Desktop; for scheduled refresh, configure a service principal with `DeviceManagementManagedDevices.Read.All` permission |
+| KQL query returns no results for IntuneDeviceComplianceOrg | Table may not have been populated yet or the time filter is too narrow | Check TimeGenerated range; run `IntuneDeviceComplianceOrg | take 10` to confirm the table has data |
+| Device diagnostics collection times out | Device is offline or the Intune Management Extension is not running | Confirm device is online and connected; check IME service status (`sc query IntuneManagementExtension`) on the device |
+| Compliance trend shows sudden drop | New compliance policy with stricter settings was assigned | Review recent policy changes in the **Audit logs** report; if intentional, communicate to stakeholders; if accidental, roll back the policy change |
 
 ---
 
-## 📝 Assessment Questions
+## Assessment Questions
 
-1. **What is Endpoint Analytics and what types of scores does it provide?**
-   <details>
-   <summary>Answer</summary>
-   Endpoint Analytics is a feature within Microsoft Intune (part of Microsoft Productivity Score) that measures device experience health. It provides scores for: Startup performance (boot and sign-in times), App reliability (crash/hang rates), Work from anywhere (cloud management readiness), Battery health (estimated vs design capacity), and Resource performance (CPU/RAM spikes).
-   </details>
+**1. Which minimum Windows telemetry level is required for Endpoint Analytics to collect startup performance data?**
 
-2. **Why should you enable Log Analytics integration early in your Intune deployment?**
-   <details>
-   <summary>Answer</summary>
-   Log Analytics data is not backfilled — it only captures logs from the point it is enabled onwards. Enabling it early ensures you have historical data available for trend analysis, auditing, and troubleshooting. Built-in Intune reports also have limited data retention compared to a Log Analytics workspace.
-   </details>
+<details>
+<summary>Answer</summary>
 
-3. **Write a KQL query that shows the count of devices by compliance state.**
-   <details>
-   <summary>Answer</summary>
+**Required (formerly Basic) — level 1.** Endpoint Analytics requires at least the **Required** diagnostic data level. This is configured via a Device Configuration profile using the **Allow Telemetry** CSP setting with a value of `1`. Higher levels (Enhanced, Full) provide additional data but Required is the minimum.
 
-   ```kql
-   IntuneDeviceComplianceOrg
-   | summarize count() by ComplianceState
-   ```
-   </details>
-
-4. **What is a Proactive Remediation in Endpoint Analytics and how does it work?**
-   <details>
-   <summary>Answer</summary>
-   A Proactive Remediation is a script package consisting of a detection script and a remediation script. The detection script checks for a specific issue (exits with code 1 if the issue is detected). If the detection script signals an issue, the remediation script runs automatically to fix it. Results are reported back to Endpoint Analytics, showing which devices were detected with the issue and whether remediation was successful.
-   </details>
-
-5. **How would you monitor whether a deployed application is successfully installed across your device fleet?**
-   <details>
-   <summary>Answer</summary>
-   Navigate to Intune > Apps > All apps, select the application, and open the Device install status or User install status report under the Monitor section. This shows per-device installation status (Installed, Pending, Failed, Not applicable) with error codes for failures. You can also use Reports > App management > App install status report for an organisation-wide view, and Log Analytics with the IntuneOperationalLogs table to query for failures programmatically.
-   </details>
+</details>
 
 ---
 
-## 🔗 Key Resources
+**2. A security auditor requests 90 days of Intune audit log history. The Intune admin center only retains 30 days. How do you fulfil this request?**
 
-- [Intune Reports Overview](https://docs.microsoft.com/en-us/mem/intune/fundamentals/reports)
-- [Endpoint Analytics Documentation](https://docs.microsoft.com/en-us/mem/analytics/overview)
-- [Log Analytics Integration with Intune](https://docs.microsoft.com/en-us/mem/intune/fundamentals/review-logs-using-azure-monitor)
-- [KQL Quick Reference](https://docs.microsoft.com/en-us/azure/data-explorer/kql-quick-reference)
-- [Proactive Remediations](https://docs.microsoft.com/en-us/mem/analytics/proactive-remediations)
-- [Intune Data Warehouse](https://docs.microsoft.com/en-us/mem/intune/developer/reports-nav-intune-data-warehouse)
-- [Troubleshoot App Installations](https://docs.microsoft.com/en-us/mem/intune/apps/troubleshoot-app-install)
+<details>
+<summary>Answer</summary>
 
----
+Configure **Diagnostic settings** under **Tenant administration > Diagnostic settings** in the Intune admin center to stream **AuditLogs** to an **Azure Monitor Log Analytics workspace**. Log Analytics can retain data for up to 2 years (configurable). Query `IntuneAuditLogs` with KQL to retrieve the required 90-day window and export the results for the auditor.
 
-## ⏭️ Next Steps
-
-After completing this module:
-1. **Enable** Log Analytics diagnostic settings in your test tenant immediately
-2. **Save** three to five KQL queries you find most useful
-3. **Review** Endpoint Analytics scores and identify the top improvement opportunity
-4. **Proceed** to [Module 09 – Integrations & Automation](../Module-09-Integrations-Automation/) to learn Windows Autopilot, PowerShell automation, and the Graph API
+</details>
 
 ---
 
-**Module Status**: Ready for Training
-**Last Updated**: April 2026
-**Duration**: 4–5 hours (including labs)
+**3. A Win32 app shows status "Failed" on 15 devices with exit code 1603. What are the first two troubleshooting steps?**
+
+<details>
+<summary>Answer</summary>
+
+1. **Collect device diagnostics** for one of the affected devices using the **Collect diagnostics** device action in the Intune admin center. Download the ZIP, extract it, and open the `IntuneManagementExtension.log` file. Search for the app's ID to find the specific error context around the 1603 exit code.
+
+2. **Check for a conflicting installation**: Exit code 1603 is a generic Windows Installer error often caused by an existing version of the app already installed, a locked file, or insufficient permissions. Connect to one of the failing devices and check **Programs and Features** (or **Apps & Features**) to see if the app is already present. Also review the Windows Application event log (`eventvwr.msc`) for MsiInstaller entries at the time of the failure.
+
+</details>
+
+---
+
+**4. What KQL query would you write to find all devices in the IntuneDeviceComplianceOrg table that have not checked in for more than 30 days, and are currently marked as noncompliant?**
+
+<details>
+<summary>Answer</summary>
+
+```kql
+IntuneDeviceComplianceOrg
+| where TimeGenerated > ago(1d)
+| extend LastContactDate = todatetime(LastContact)
+| where LastContactDate < ago(30d)
+| where ComplianceState == "noncompliant"
+| project DeviceName, UserName, OS, OSVersion, LastContact, ComplianceState
+| order by LastContactDate asc
+```
+
+This query reads the most recent snapshot (`ago(1d)`), converts `LastContact` to a datetime, filters for devices not seen in 30 days, and further restricts to noncompliant state. The results are ordered by oldest check-in first to prioritize the most stale devices.
+
+</details>
+
+---
+
+**5. Your organization wants to give the security operations team read-only access to Intune compliance reports without allowing them to make any configuration changes. What is the least-privileged built-in role assignment?**
+
+<details>
+<summary>Answer</summary>
+
+Assign the built-in **Intune Read Only Operator** role. This role grants read access to all Intune data including reports, device details, compliance status, and app status, but does not permit any create, update, or delete operations. It is the least-privileged built-in role that satisfies read-only reporting access. Assign it scoped to **All devices** and **All users** scope groups as appropriate for the security team's responsibilities.
+
+</details>
+
+---
+
+## Key Resources
+
+| Resource | Link |
+|---|---|
+| Intune reports overview | [https://learn.microsoft.com/en-us/mem/intune/fundamentals/reports](https://learn.microsoft.com/en-us/mem/intune/fundamentals/reports) |
+| Endpoint Analytics overview | [https://learn.microsoft.com/en-us/mem/analytics/overview](https://learn.microsoft.com/en-us/mem/analytics/overview) |
+| Startup performance in Endpoint Analytics | [https://learn.microsoft.com/en-us/mem/analytics/startup-performance](https://learn.microsoft.com/en-us/mem/analytics/startup-performance) |
+| Work from Anywhere report | [https://learn.microsoft.com/en-us/mem/analytics/work-from-anywhere](https://learn.microsoft.com/en-us/mem/analytics/work-from-anywhere) |
+| Send log data to Log Analytics | [https://learn.microsoft.com/en-us/mem/intune/fundamentals/review-logs-using-azure-monitor](https://learn.microsoft.com/en-us/mem/intune/fundamentals/review-logs-using-azure-monitor) |
+| KQL reference for Log Analytics | [https://learn.microsoft.com/en-us/azure/data-explorer/kql-quick-reference](https://learn.microsoft.com/en-us/azure/data-explorer/kql-quick-reference) |
+| Intune Data Warehouse API | [https://learn.microsoft.com/en-us/mem/intune/developer/reports-nav-create-intune-reports](https://learn.microsoft.com/en-us/mem/intune/developer/reports-nav-create-intune-reports) |
+| Graph API export jobs | [https://learn.microsoft.com/en-us/graph/api/intune-reporting-devicemanagementreports-exportjob-create](https://learn.microsoft.com/en-us/graph/api/intune-reporting-devicemanagementreports-exportjob-create) |
+| Power BI integration with Intune | [https://learn.microsoft.com/en-us/mem/intune/developer/reports-nav-create-intune-reports#power-bi](https://learn.microsoft.com/en-us/mem/intune/developer/reports-nav-create-intune-reports#power-bi) |
+| Remediations (Proactive Remediations) | [https://learn.microsoft.com/en-us/mem/analytics/remediations](https://learn.microsoft.com/en-us/mem/analytics/remediations) |
+| Win32 app troubleshooting | [https://learn.microsoft.com/en-us/mem/intune/apps/troubleshoot-app-install](https://learn.microsoft.com/en-us/mem/intune/apps/troubleshoot-app-install) |
+
+---
+
+## Next Steps
+
+After completing this module, you are ready to move on to:
+
+- **Module 09: Role-Based Access Control (RBAC) and Scope Tags** — Learn how to delegate Intune administration to multiple IT teams using built-in and custom roles, and use scope tags to enforce administrative boundaries across device groups.
+
+**Reinforce what you learned in this module by:**
+
+- Setting up a recurring weekly email export of the Device Compliance report using Power Automate and the Graph API
+- Creating an Azure Monitor alert rule that fires when noncompliant device count exceeds a threshold (e.g., 50 devices)
+- Writing a Remediations script pair that detects and re-enables the Windows Update service if it has been disabled
+- Building a Power BI report that combines Intune compliance data with Microsoft Defender for Endpoint risk scores to produce a unified endpoint risk view
+
+---
+
+*Module 08 of the Microsoft Intune Endpoint Administration Course*
