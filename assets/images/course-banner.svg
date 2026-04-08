@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="900" height="240">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0078D4;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#005A9E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#002050;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#50E6FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0078D4;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="240" fill="url(#bg)" rx="12"/>
+
+  <!-- Decorative circles -->
+  <circle cx="820" cy="40" r="90" fill="#50E6FF" fill-opacity="0.06"/>
+  <circle cx="780" cy="200" r="70" fill="#50E6FF" fill-opacity="0.05"/>
+  <circle cx="860" cy="130" r="50" fill="#50E6FF" fill-opacity="0.07"/>
+
+  <!-- Left accent bar -->
+  <rect x="0" y="0" width="6" height="240" fill="url(#accent)" rx="3"/>
+
+  <!-- Microsoft Intune icon area -->
+  <rect x="40" y="70" width="64" height="64" rx="14" fill="#50E6FF" fill-opacity="0.2"/>
+  <rect x="52" y="82" width="40" height="40" rx="8" fill="#50E6FF" fill-opacity="0.4"/>
+  <!-- Device icon inside -->
+  <rect x="60" y="90" width="24" height="18" rx="3" fill="white" fill-opacity="0.9"/>
+  <rect x="69" y="108" width="6" height="3" rx="1" fill="white" fill-opacity="0.7"/>
+  <circle cx="72" cy="115" r="2" fill="white" fill-opacity="0.8"/>
+
+  <!-- Main Title -->
+  <text x="130" y="105" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="white">Microsoft Intune</text>
+  <text x="130" y="138" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="400" fill="#50E6FF">Complete Training Course</text>
+
+  <!-- Subtitle -->
+  <text x="130" y="168" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#BDD9F2">Hands-On Lab Guide · 11 Modules · 45+ Labs · MD-102 / MS-101 Prep</text>
+
+  <!-- Divider line -->
+  <line x1="130" y1="178" x2="680" y2="178" stroke="#50E6FF" stroke-opacity="0.3" stroke-width="1"/>
+
+  <!-- Stats row -->
+  <text x="130" y="198" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#BDD9F2">📦 11 Modules</text>
+  <text x="240" y="198" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#BDD9F2">🧪 45+ Labs</text>
+  <text x="340" y="198" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#BDD9F2">⏱ 40–50 Hours</text>
+  <text x="460" y="198" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#BDD9F2">🎓 Beginner → Advanced</text>
+
+  <!-- Right badge -->
+  <rect x="730" y="82" width="140" height="56" rx="10" fill="white" fill-opacity="0.1"/>
+  <text x="800" y="106" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#50E6FF" text-anchor="middle" font-weight="600">CERTIFICATION</text>
+  <text x="800" y="122" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="700">MD-102</text>
+  <text x="800" y="136" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#BDD9F2" text-anchor="middle">MS-101 Ready</text>
+</svg>

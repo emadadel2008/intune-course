@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 200" width="900" height="200">
+  <defs>
+    <linearGradient id="pathBg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#F0F7FF"/>
+      <stop offset="100%" style="stop-color:#E8F3FF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="200" fill="url(#pathBg)" rx="12"/>
+
+  <!-- Title -->
+  <text x="450" y="28" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#003087" text-anchor="middle">Course Learning Path</text>
+
+  <!-- Connector line -->
+  <line x1="50" y1="105" x2="850" y2="105" stroke="#0078D4" stroke-width="2" stroke-dasharray="6,4" stroke-opacity="0.4"/>
+
+  <!-- PHASE labels -->
+  <rect x="30" y="155" width="140" height="22" rx="5" fill="#E1EFFF"/>
+  <text x="100" y="170" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#0078D4" text-anchor="middle" font-weight="600">Foundation</text>
+
+  <rect x="315" y="155" width="140" height="22" rx="5" fill="#E1F0E8"/>
+  <text x="385" y="170" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#006B4F" text-anchor="middle" font-weight="600">Core Skills</text>
+
+  <rect x="590" y="155" width="140" height="22" rx="5" fill="#FDE8E8"/>
+  <text x="660" y="170" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#A4373A" text-anchor="middle" font-weight="600">Advanced &amp; Certification</text>
+
+  <!-- Phase bracket lines -->
+  <line x1="30" y1="150" x2="170" y2="150" stroke="#0078D4" stroke-width="1.5" stroke-opacity="0.5"/>
+  <line x1="315" y1="150" x2="455" y2="150" stroke="#006B4F" stroke-width="1.5" stroke-opacity="0.5"/>
+  <line x1="590" y1="150" x2="860" y2="150" stroke="#A4373A" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- Module nodes -->
+  <!-- M1 -->
+  <circle cx="60" cy="105" r="22" fill="#0078D4"/>
+  <text x="60" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M1</text>
+  <text x="60" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Intro</text>
+
+  <!-- M2 -->
+  <circle cx="145" cy="105" r="22" fill="#0078D4"/>
+  <text x="145" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M2</text>
+  <text x="145" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Fundamentals</text>
+
+  <!-- M3 -->
+  <circle cx="245" cy="105" r="22" fill="#005A9E"/>
+  <text x="245" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M3</text>
+  <text x="245" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Getting Started</text>
+
+  <!-- M4 -->
+  <circle cx="340" cy="105" r="22" fill="#006B4F"/>
+  <text x="340" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M4</text>
+  <text x="340" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Enrollment</text>
+
+  <!-- M5 -->
+  <circle cx="420" cy="105" r="22" fill="#006B4F"/>
+  <text x="420" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M5</text>
+  <text x="420" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">App Mgmt</text>
+
+  <!-- M6 -->
+  <circle cx="505" cy="105" r="22" fill="#A4373A"/>
+  <text x="505" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M6</text>
+  <text x="505" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Security</text>
+
+  <!-- M7 -->
+  <circle cx="590" cy="105" r="22" fill="#A4373A"/>
+  <text x="590" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M7</text>
+  <text x="590" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Remote Help</text>
+
+  <!-- M8 -->
+  <circle cx="665" cy="105" r="22" fill="#6B3A7D"/>
+  <text x="665" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M8</text>
+  <text x="665" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Analytics</text>
+
+  <!-- M9 -->
+  <circle cx="740" cy="105" r="22" fill="#6B3A7D"/>
+  <text x="740" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M9</text>
+  <text x="740" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Integrations</text>
+
+  <!-- M10 -->
+  <circle cx="815" cy="105" r="22" fill="#004E8C"/>
+  <text x="815" y="109" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">M10</text>
+  <text x="815" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Best Practices</text>
+
+  <!-- M11 star -->
+  <circle cx="875" cy="105" r="22" fill="#FFB900"/>
+  <text x="875" y="102" font-family="Segoe UI, Arial, sans-serif" font-size="14" text-anchor="middle">🏆</text>
+  <text x="875" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#333" text-anchor="middle">Capstone</text>
+
+  <!-- Skill level labels on left -->
+  <text x="22" y="70" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#888" transform="rotate(-90,22,70)">SKILL LEVEL</text>
+</svg>
