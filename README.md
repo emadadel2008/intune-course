@@ -5,7 +5,7 @@
 </p>
 
 [![Course Status](https://img.shields.io/badge/Status-Active-success)](https://github.com)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-red.svg)](LICENSE)
 [![Modules](https://img.shields.io/badge/Modules-11-orange)](README.md)
 
 ## 📋 Course Overview
@@ -174,9 +174,14 @@ This comprehensive Microsoft Intune training course provides hands-on labs and p
 - Microsoft Graph Explorer
 
 
-## 📄 License
+## 📄 License & Copyright
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This course is protected under the **Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International** license.
+
+> ⚠️ **You may NOT copy, redistribute, sell, or create derivative works from this content.**  
+> Personal study and classroom reference are permitted. See [LICENSE](LICENSE) for full terms.
+
+© 2026 [emadadel2008](https://github.com/emadadel2008) — All Rights Reserved.
 
 ## 🙏 Acknowledgments
 
