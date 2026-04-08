@@ -1,582 +1,595 @@
-# Module 11: Capstone Project & Certification Prep
-
----
+# Module 07: Remote Help & Support
 
 ## Module Overview
 
-Welcome to the final module of the **Microsoft Intune Endpoint Administration** course. This capstone project is the culminating experience that ties together every concept, skill, and lab you have worked through in Modules 1–10. Rather than studying topics in isolation, you will now apply them holistically to a realistic enterprise scenario.
+Remote Help is a cloud-based solution integrated into Microsoft Intune that enables IT administrators and support staff to provide real-time remote assistance to end users on managed Windows devices. Unlike traditional remote desktop tools, Remote Help is fully integrated with Azure Active Directory and Intune Role-Based Access Control (RBAC), ensuring that only authorized personnel can connect to corporate devices. This module covers everything from licensing and configuration to hands-on troubleshooting workflows that are essential for enterprise IT support teams.
 
-You will act as the lead endpoint administrator for **Contoso Ltd**, a mid-sized professional-services firm with 500 devices spread across three office locations and a fully remote workforce. Contoso is retiring its legacy on-premises Configuration Manager (SCCM) estate and migrating entirely to Microsoft Intune in the cloud. Your mission is to design, deploy, validate, and document that migration end-to-end.
-
-In addition to the hands-on project work, this module prepares you for the **MD-102: Endpoint Administrator Associate** certification exam with simulated questions, exam-topic mapping, and a study roadmap.
-
-**Estimated time to complete:** 8–12 hours  
-**Difficulty:** Advanced  
-**Prerequisites:** Modules 1–10 completed; Microsoft 365 E3/E5 trial tenant or lab environment
+By the end of this module, you will understand how to deploy and manage Remote Help across your organization, how to perform live remote assistance sessions, and how to diagnose and resolve the most common device enrollment and management issues using Intune's built-in diagnostic tools.
 
 ---
 
 ## Learning Objectives
 
-By the end of this module you will be able to:
+By completing this module, you will be able to:
 
-1. Design an end-to-end Intune deployment architecture for an enterprise of 500+ devices.
-2. Configure a production-ready Microsoft 365 / Entra ID tenant for Intune management.
-3. Enroll Windows 10/11, iOS/iPadOS, and Android devices using multiple enrollment methods.
-4. Deploy a multi-tier application portfolio (Win32, Microsoft Store, LOB, web apps).
-5. Build and assign compliance policies, conditional access rules, and endpoint security baselines.
-6. Automate routine administrative tasks with Microsoft Graph API and PowerShell.
-7. Generate executive-level reporting and custom analytics dashboards.
-8. Demonstrate readiness for the MD-102 Endpoint Administrator Associate exam.
+- Describe what Remote Help is and how it integrates with Microsoft Intune
+- Identify the licensing requirements needed to use Remote Help in production
+- Configure tenant-level Remote Help settings in the Intune admin center
+- Understand the difference between Helper and Sharer roles in a Remote Help session
+- Compare Remote Help with other remote assistance tools (Quick Assist, TeamViewer)
+- Assign and manage RBAC permissions for Remote Help scenarios
+- Initiate and manage a Remote Help session from start to finish
+- Collect diagnostic logs and device sync information to troubleshoot managed devices
+- Identify and resolve common Intune enrollment errors
+- Apply best practices for secure and compliant remote support operations
 
 ---
 
-## Capstone Project: Contoso Ltd Migration
+## Key Topics
 
-### Company Profile
+### 1. What is Remote Help in Intune
 
-| Attribute | Detail |
+Remote Help is a premium add-on feature for Microsoft Intune that provides a secure, cloud-brokered remote assistance experience. It is built into the Company Portal ecosystem and uses Azure AD authentication to verify both the helper (IT support) and the sharer (end user) before establishing a connection.
+
+**Key capabilities include:**
+
+- **Full control and view-only modes** — Helpers can either observe the user's screen or take full interactive control, depending on permissions granted
+- **Elevation support** — Helpers with appropriate permissions can perform administrative actions on standard user accounts without requiring the user to have local admin rights
+- **Chat during session** — Built-in text chat allows communication without needing a separate tool
+- **Session audit logs** — All Remote Help sessions are logged in Intune for compliance and auditing purposes
+- **Conditional Access support** — Remote Help respects your Conditional Access policies, preventing connections from non-compliant or unmanaged devices
+
+Remote Help is currently supported on:
+
+| Platform | Support Level |
 |---|---|
-| Company name | Contoso Ltd |
-| Industry | Professional services (legal & consulting) |
-| Total devices | 500 |
-| Windows laptops | 320 (mix of Windows 10 22H2 and Windows 11 23H2) |
-| iOS/iPadOS devices | 120 (company-owned iPhones and iPads) |
-| Android devices | 60 (Samsung Knox corporate devices) |
-| Locations | Chicago HQ, New York Branch, London Branch, fully remote workers |
-| Existing identity | Active Directory on-premises + Entra ID Connect (hybrid) |
-| Current MDM | None – transitioning from Group Policy only |
-| Compliance requirements | SOC 2 Type II, GDPR (London office), HIPAA-adjacent (healthcare clients) |
-
-### Business Goals
-
-- Eliminate all on-premises MDM infrastructure within 90 days.
-- Enforce conditional access so only compliant, Intune-managed devices can reach corporate data.
-- Deliver a self-service app portal to all employees.
-- Achieve < 4-hour onboarding time for new hires using Windows Autopilot.
-- Provide the security team with a real-time compliance dashboard.
+| Windows 10 (1909+) | Full support |
+| Windows 11 | Full support |
+| macOS | Limited (view-only, preview) |
+| Android | Not supported |
+| iOS/iPadOS | Not supported |
 
 ---
 
-## Project Architecture Diagram
+### 2. Licensing Requirements
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     Microsoft 365 Cloud (Entra ID)                  │
-│                                                                     │
-│   ┌─────────────┐   ┌──────────────┐   ┌────────────────────────┐  │
-│   │  Intune MDM  │   │  Defender    │   │  Conditional Access    │  │
-│   │  & MAM       │   │  for Endpoint│   │  (Entra ID P2)         │  │
-│   └──────┬──────┘   └──────┬───────┘   └───────────┬────────────┘  │
-│          │                 │                        │               │
-│   ┌──────▼─────────────────▼────────────────────────▼────────────┐  │
-│   │              Microsoft Graph API / REST                       │  │
-│   └──────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
-          │                    │                    │
-          ▼                    ▼                    ▼
-  ┌───────────────┐   ┌────────────────┐   ┌───────────────────┐
-  │  Windows 11   │   │  iOS / iPadOS  │   │  Android (Knox)   │
-  │  Autopilot    │   │  ADE + Apple   │   │  Zero-Touch /     │
-  │  (320 devices)│   │  Configurator  │   │  Knox Mobile Enr. │
-  │               │   │  (120 devices) │   │  (60 devices)     │
-  └───────┬───────┘   └───────┬────────┘   └────────┬──────────┘
-          │                   │                     │
-          ▼                   ▼                     ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │              Contoso Corporate Network                       │
-  │                                                             │
-  │  Chicago HQ ──── New York Branch ──── London Branch        │
-  │  (AD DS + ADFS)   (VPN Gateway)        (GDPR boundary)     │
-  └─────────────────────────────────────────────────────────────┘
-          │
-          ▼
-  ┌────────────────────────────────┐
-  │  On-Premises Infrastructure    │
-  │  • Active Directory DS         │
-  │  • Entra ID Connect (sync)     │
-  │  • Certificate Authority (PKI) │
-  │  • SCCM (being retired)        │
-  └────────────────────────────────┘
-```
+Remote Help is not included in the base Microsoft Intune license. It requires one of the following:
 
-**Data flow summary:**
-1. Device enrolls via Autopilot / ADE / Knox → Intune receives hardware identity.
-2. Intune pushes configuration profiles, compliance policies, and apps.
-3. Defender for Endpoint reports device health → Intune marks device compliant/non-compliant.
-4. Conditional Access evaluates compliance + user risk before granting access to Exchange / SharePoint / Teams.
-5. Graph API / PowerShell automation handles bulk operations and reporting.
+| License / Plan | Remote Help Included |
+|---|---|
+| Microsoft Intune Plan 1 (standalone) | ❌ No — requires add-on |
+| Microsoft Intune Plan 2 | ✅ Yes — included |
+| Microsoft Intune Suite | ✅ Yes — included |
+| Microsoft 365 E3 + Intune add-on | ✅ Yes — with add-on |
+| Microsoft 365 E5 | ✅ Yes — included |
+| Microsoft 365 Business Premium | ❌ No — requires upgrade |
+
+**Important licensing notes:**
+
+- The **helper** (IT support staff) must have a license that includes Remote Help assigned to their account
+- The **sharer** (end user) does NOT need a Remote Help license — only a standard Intune license is required
+- You can purchase the Remote Help add-on separately if you are on Intune Plan 1
+- Trial tenants can test Remote Help features during the trial period
+
+To verify your licensing:
+1. Navigate to **Microsoft Intune admin center** → **Tenant administration** → **Tenant status**
+2. Review the **Connector status** and **Service details** sections
+3. Confirm Remote Help is shown as an active feature
 
 ---
 
-## Labs
+### 3. Roles and Permissions (Helper vs. Sharer)
+
+Remote Help uses a two-party model where one person provides help and another receives it.
+
+#### Helper Role
+
+The **Helper** is the IT support technician or administrator who initiates or accepts a remote connection. The helper:
+
+- Must be assigned an Intune role that includes Remote Help permissions
+- Sees a 8-character session code that the sharer must enter
+- Can request to view the screen or take full control (subject to permissions)
+- Can optionally elevate to perform admin actions (requires "Elevation" permission in RBAC)
+
+**Built-in roles with Remote Help access:**
+
+| Role | View Screen | Full Control | Elevation |
+|---|---|---|---|
+| Help Desk Operator | ✅ | ✅ | ❌ |
+| Intune Administrator | ✅ | ✅ | ✅ |
+| Custom Role (configured) | Configurable | Configurable | Configurable |
+
+#### Sharer Role
+
+The **Sharer** is the end user requesting assistance. The sharer:
+
+- Does NOT need an Intune admin role
+- Receives a session code from the helper or generates one through the Company Portal
+- Must consent to screen sharing and control before the session begins
+- Can end the session at any time by closing the Remote Help window
+- Is notified at all times whether the helper is in view-only or full-control mode
+
+#### RBAC Permission Reference
+
+Remote Help permissions are found under **Intune RBAC** → **Remote Help app**:
+
+| Permission | Description |
+|---|---|
+| View screen | Allow helper to see the sharer's screen |
+| Take full control | Allow helper to interact with mouse/keyboard |
+| Elevation | Allow helper to run elevated actions on behalf of the user |
+| View reports | Allow helper to review session audit logs |
 
 ---
 
-### Lab 11.1: Comprehensive Enterprise Deployment Project
+### 4. Remote Help vs. Quick Assist vs. TeamViewer
 
-**Scenario:** You are the sole Intune administrator at Contoso Ltd. Follow each phase to build out the complete environment.
+Understanding when to use each tool is important for selecting the right support approach.
 
-**Duration:** 4–6 hours  
-**See:** [`lab-guide.md`](./lab-guide.md) for the full step-by-step walkthrough covering all five phases.
+| Feature | Remote Help (Intune) | Quick Assist (Windows) | TeamViewer |
+|---|---|---|---|
+| Integration with Intune | ✅ Native | ❌ None | ✅ Connector available |
+| Azure AD authentication | ✅ Required | ❌ Microsoft Account only | ❌ No |
+| Audit logging in Intune | ✅ Full logs | ❌ None | ⚠️ Partial (via connector) |
+| Elevation support | ✅ Yes | ⚠️ Limited | ✅ Yes |
+| Works on unmanaged devices | ❌ No | ✅ Yes | ✅ Yes |
+| License required | ✅ Yes (add-on/plan) | ✅ Included in Windows | 💰 Paid license |
+| RBAC enforcement | ✅ Yes | ❌ No | ⚠️ Limited |
+| Conditional Access support | ✅ Yes | ❌ No | ❌ No |
+| Cross-platform | Windows only* | Windows only | Multi-platform |
 
-#### Phase Summary
+**Recommendation:** Use Remote Help for all Intune-managed Windows devices in enterprise scenarios where audit trails, RBAC, and Conditional Access compliance are required. Use Quick Assist only for ad hoc support on unmanaged devices or personal machines.
 
-| Phase | Focus Area | Key Deliverable |
+---
+
+### 5. Configuring Remote Help Tenant Settings
+
+Before users can use Remote Help, you must enable and configure it at the tenant level.
+
+**To enable Remote Help in the Intune admin center:**
+
+1. Sign in to the [Microsoft Intune admin center](https://intune.microsoft.com)
+2. Navigate to **Tenant administration** → **Remote Help**
+3. On the **Settings** tab, set **Enable Remote Help** to **Enabled**
+4. Configure the following options:
+
+| Setting | Description | Recommendation |
 |---|---|---|
-| 1 | Tenant & Infrastructure Setup | Configured tenant, licenses assigned, MDM authority set |
-| 2 | Device Enrollment | Windows Autopilot, ADE for iOS, Knox for Android |
-| 3 | Application Deployment | Win32 packager, Microsoft Store, web clips |
-| 4 | Security & Compliance | Baselines, compliance policies, conditional access |
-| 5 | Automation & Reporting | Graph PowerShell scripts, compliance dashboard |
+| Enable Remote Help | Master toggle to activate the feature | Enabled |
+| Allow Remote Help to unenrolled devices | Permit connections to devices not enrolled in Intune | Disabled (security risk) |
+| Disable chat | Remove the in-session text chat function | Per policy |
+| Enable elevation | Allow helpers to run elevated actions | Enabled for Help Desk role |
+
+5. Click **Save**
+6. Deploy the **Remote Help application** to target devices via Intune app deployment
+
+**To deploy the Remote Help app:**
+
+1. Navigate to **Apps** → **Windows** → **Add**
+2. Select **Microsoft app** as the app type
+3. Search for **Remote Help** and select it
+4. Assign the app to the appropriate device or user groups
+5. The app can also be downloaded manually from [https://aka.ms/downloadremotehelp](https://aka.ms/downloadremotehelp)
 
 ---
 
-### Lab 11.2: Simulate MD-102 / MS-101 Exam Questions
+### 6. Troubleshooting Managed Devices
 
-**Instructions:** Answer each question before revealing the answer. Track your score. A passing score on the actual exam is 700/1000.
+When Remote Help alone cannot resolve an issue, Intune provides built-in diagnostic and troubleshooting capabilities.
 
----
+#### MDM Diagnostic Logs
 
-**Question 1**  
-A user's Windows 11 device is marked **Not Compliant** in Intune even though BitLocker is enabled. Which setting should you check first?
+**From the device (Windows):**
 
-- A) The compliance policy grace period  
-- B) The device enrollment type  
-- C) The BitLocker encryption report method in the compliance policy  
-- D) The Windows Defender firewall profile  
+```
+Windows Settings → Accounts → Access work or school → [Account] → Info → Create report
+```
 
-**Answer: C** — Intune checks BitLocker compliance through the compliance policy's *Require device encryption* setting; if the policy uses the wrong report method (e.g., requires OS drive encryption via ConfigMgr reporting instead of Intune), the device may show as non-compliant despite BitLocker being active.
+This generates an `MDMDiagReport.html` and associated logs in:
+```
+C:\Users\Public\Documents\MDMDiagnostics\
+```
 
----
+**From Intune admin center:**
 
-**Question 2**  
-Contoso wants to prevent corporate data from being copied from the Outlook mobile app to a personal notes app on iOS. Which Intune feature should you configure?
+1. Navigate to **Devices** → **Windows** → select the device
+2. Click **...** (ellipsis) → **Collect diagnostics**
+3. Intune pushes a request to the device; logs are uploaded when the device checks in
+4. Download the collected logs from **Device diagnostics** tab
 
-- A) Device compliance policy  
-- B) App protection policy (MAM)  
-- C) Device configuration profile – restrictions  
-- D) Conditional access policy  
+#### Device Sync
 
-**Answer: B** — App protection policies (MAM) control data transfer between managed and unmanaged apps without requiring device enrollment.
+Force a policy sync from the admin center:
 
----
+1. Select the device in **Devices** → **Windows**
+2. Click **Sync** in the top action bar
+3. The device will check in within 5–15 minutes (or immediately if online)
 
-**Question 3**  
-You need to deploy a legacy 32-bit `.exe` installer to 200 Windows devices. The application requires silent installation switches. What is the correct Intune app type to use?
+You can also trigger sync from the device:
+- **Settings** → **Accounts** → **Access work or school** → **[Account]** → **Info** → **Sync**
 
-- A) Microsoft Store app  
-- B) Line-of-business app (.msi)  
-- C) Win32 app  
-- D) Web app  
+#### Remote Actions Available from Intune
 
-**Answer: C** — Win32 apps support `.exe` installers, custom install/uninstall commands, detection rules, and dependency chains.
-
----
-
-**Question 4**  
-Which enrollment method allows Windows devices to be pre-configured and delivered directly to end users without IT touching the hardware?
-
-- A) Bulk enrollment via provisioning package  
-- B) Windows Autopilot user-driven mode  
-- C) Co-management with Configuration Manager  
-- D) Entra ID join via Settings app  
-
-**Answer: B** — Windows Autopilot user-driven mode enables zero-touch provisioning: the OEM or reseller registers the hardware hash, and the device self-configures on first boot.
-
----
-
-**Question 5**  
-An iOS device enrolled via ADE is showing *Supervised: No* in the Intune console. What is the most likely cause?
-
-- A) The Apple MDM Push certificate expired  
-- B) The device was not assigned to the MDM server in Apple Business Manager  
-- C) The enrollment profile was not set to supervised mode  
-- D) The user declined the management profile  
-
-**Answer: C** — The ADE enrollment profile must explicitly enable supervised mode; without it, devices enroll as unsupervised even via ADE.
-
----
-
-**Question 6**  
-Contoso's conditional access policy requires compliant devices. A user with a compliant device cannot access SharePoint Online. What should you check?
-
-- A) The user's license assignment  
-- B) The conditional access policy assignment (users/groups scope)  
-- C) The SharePoint Online service health  
-- D) The device's Intune enrollment date  
-
-**Answer: B** — Conditional access policies apply only to the users/groups included in the policy assignment; if the user is excluded or not included, the policy does not enforce compliance for them.
-
----
-
-**Question 7**  
-Which Intune report provides a per-app installation status broken down by device and user?
-
-- A) Device compliance report  
-- B) App installation status report  
-- C) Endpoint analytics baseline  
-- D) Defender for Endpoint threat report  
-
-**Answer: B** — The App installation status report (Intune > Apps > Monitor > App install status) shows install state per app, per device, and per user.
-
----
-
-**Question 8**  
-You want to enforce a minimum OS version of Windows 11 22H2 for compliance. Where do you configure this?
-
-- A) Device configuration profile – Edition upgrade  
-- B) Windows Update for Business ring  
-- C) Device compliance policy – Device health section  
-- D) Device compliance policy – Device properties section  
-
-**Answer: D** — Minimum and maximum OS version requirements are in the **Device properties** section of a Windows compliance policy.
-
----
-
-**Question 9**  
-A SCEP certificate profile is not deploying to devices. Which service is responsible for translating Intune certificate requests to your on-premises CA?
-
-- A) Intune Connector for Active Directory  
-- B) Network Device Enrollment Service (NDES) + Microsoft Intune Certificate Connector  
-- C) Azure AD Application Proxy  
-- D) Windows Push Notification Service (WNS)  
-
-**Answer: B** — SCEP certificate delivery requires NDES and the Microsoft Intune Certificate Connector installed on an on-premises server that can reach the CA.
-
----
-
-**Question 10**  
-Contoso needs to remotely wipe corporate data from a personal (BYOD) iPhone without erasing the user's personal photos. Which action should you use?
-
-- A) Retire  
-- B) Wipe  
-- C) Delete  
-- D) Fresh Start  
-
-**Answer: A** — **Retire** removes corporate data, profiles, and apps managed by Intune while leaving personal data intact. **Wipe** performs a factory reset.
-
----
-
-**Question 11**  
-Which Graph API permission scope is required to read all device compliance policies programmatically?
-
-- A) `DeviceManagementConfiguration.Read.All`  
-- B) `DeviceManagementApps.Read.All`  
-- C) `Directory.Read.All`  
-- D) `Policy.Read.All`  
-
-**Answer: A** — Compliance policies are part of the device management configuration namespace; `DeviceManagementConfiguration.Read.All` grants read access.
-
----
-
-**Question 12**  
-You deploy an Endpoint Security – Antivirus policy. Which underlying technology enforces the settings on Windows 11?
-
-- A) Windows Defender Application Control (WDAC)  
-- B) Microsoft Defender Antivirus via the Defender CSP  
-- C) Windows Security Center GPO templates  
-- D) Microsoft Endpoint Configuration Manager client  
-
-**Answer: B** — Endpoint Security antivirus policies in Intune use the **Defender CSP** to configure Microsoft Defender Antivirus settings on Windows devices.
-
----
-
-**Question 13**  
-Contoso wants kiosk-mode devices in the lobby running a single UWP app. Which configuration profile type should you use?
-
-- A) Device restrictions – General  
-- B) Kiosk (single-app, multi-app)  
-- C) Shared device configuration  
-- D) Administrative templates (ADMX)  
-
-**Answer: B** — The **Kiosk** profile type (under Device Configuration > Profiles > Windows > Kiosk) supports single-app and multi-app kiosk configurations.
-
----
-
-**Question 14**  
-A new Android device fails to enroll with the error "Device limit reached." Where do you adjust this limit?
-
-- A) Entra ID – Device settings – Maximum number of devices  
-- B) Intune – Enrollment – Enrollment restrictions – Device limit restriction  
-- C) Intune – Devices – All devices – Enrollment limits  
-- D) Both A and B  
-
-**Answer: D** — Both Entra ID device limit and Intune enrollment device limit restrictions can independently block enrollment; both must be checked.
-
----
-
-**Question 15**  
-Which Windows Autopilot deployment mode is best for pre-provisioning devices in a staging area before shipping to users?
-
-- A) User-driven Azure AD join  
-- B) Self-deploying mode  
-- C) Pre-provisioning (White Glove)  
-- D) Co-management enrollment  
-
-**Answer: C** — **Pre-provisioning (White Glove)** allows IT or a reseller to complete the device-side provisioning phase in advance so users only complete the user-side phase on first login.
-
----
-
-**Question 16**  
-You want to block users from unenrolling their corporate-owned iOS devices. Which setting controls this?
-
-- A) Device compliance policy – Jailbreak detection  
-- B) Enrollment restrictions – Platform restrictions  
-- C) ADE enrollment profile – User affinity setting  
-- D) Device configuration profile – Supervised restrictions – Allow unenrollment  
-
-**Answer: D** — On supervised iOS devices, the **Device configuration profile > Restrictions > Allow unenrollment** setting (set to Block) prevents users from removing the management profile.
-
----
-
-**Question 17**  
-Endpoint Analytics shows a high startup-performance score regression on 40 devices after a Windows update. What is the most efficient Intune action?
-
-- A) Wipe and re-enroll all 40 devices  
-- B) Use Update Compliance to pause the update ring  
-- C) Pause the Windows Update for Business ring that delivered the update  
-- D) Create a PowerShell script to roll back the update  
-
-**Answer: C** — Windows Update for Business rings in Intune support pausing; pausing the ring that pushed the problematic update stops it from deploying to remaining devices and allows investigation.
-
----
-
-**Question 18**  
-A user reports that a required app shows "Pending" for more than 24 hours. Which logs should you collect from the device first?
-
-- A) Windows Event Viewer – Application log  
-- B) Intune Management Extension (IME) log at `%ProgramData%\Microsoft\IntuneManagementExtension\Logs`  
-- C) MDM Diagnostic Report via Settings > Accounts > Access work or school  
-- D) Both B and C  
-
-**Answer: D** — IME logs detail Win32/PowerShell app delivery errors; the MDM Diagnostic Report shows enrollment and policy state. Both are needed for complete triage.
-
----
-
-**Question 19**  
-Contoso must ensure devices automatically re-enroll after a corporate wipe. Which feature provides this for Windows Autopilot devices?
-
-- A) Autopilot Reset  
-- B) Enrollment Status Page retry  
-- C) Windows Hello for Business re-provisioning  
-- D) Fresh Start  
-
-**Answer: A** — **Autopilot Reset** wipes the device and re-runs the Autopilot provisioning experience, restoring it to a business-ready state without removing it from the Autopilot hardware database.
-
----
-
-**Question 20**  
-Which Intune role has permissions to assign policies and profiles but cannot delete or create new ones?
-
-- A) Intune Service Administrator  
-- B) Help Desk Operator  
-- C) Read Only Operator  
-- D) Policy and Profile Manager  
-
-**Answer: D** — The built-in **Policy and Profile Manager** role can read, create, update, and assign profiles/policies but does not include device wipe or delete permissions; check exact role definitions in your tenant as Microsoft updates built-in roles periodically.
-
----
-
-**Score yourself:**  
-- 18–20 correct: Exam-ready  
-- 14–17 correct: Review weak areas  
-- Below 14: Revisit relevant modules before sitting the exam
-
----
-
-### Lab 11.3: Hands-on Review of Key Scenarios
-
----
-
-#### Scenario 1: Device Marked Non-Compliant After Policy Change
-
-**Situation:** You updated the compliance policy to require Windows 11 23H2 minimum OS. Fifty devices are now non-compliant. Conditional access is blocking those users from email. HR is calling.
-
-**Diagnosis steps:**
-1. In the Intune portal, navigate to **Reports > Device compliance > Non-compliant devices** and filter by OS version.
-2. Confirm whether devices are genuinely on an older OS or whether a grace period is in effect.
-3. Check **Devices > Monitor > Compliance policy settings** to see per-setting non-compliance.
-
-**Resolution:**
-1. Create a Windows Update for Business **feature update** policy targeting Windows 11 23H2 and assign it to the affected group.
-2. Set a **7-day grace period** on the compliance policy's non-compliance action to email users instead of immediately blocking access.
-3. Monitor the **Windows Feature Update report** to track upgrade progress.
-4. Once devices reach 23H2, compliance status resolves automatically.
-
-**Key lesson:** Always set a grace period when introducing OS version requirements mid-deployment; this avoids immediate productivity disruption.
-
----
-
-#### Scenario 2: Win32 App Stuck in "Pending Install" State
-
-**Situation:** A required Win32 app shows "Pending Install" on 30 devices for 48 hours. The IME service appears to be running.
-
-**Diagnosis steps:**
-1. On an affected device open `%ProgramData%\Microsoft\IntuneManagementExtension\Logs\IntuneManagementExtension.log`.
-2. Search for the app's name or its Intune app ID; look for error codes.
-3. Common error: `0x80070005` (Access denied during install) or `0x87D30003` (App supersedence conflict).
-
-**Resolution:**
-1. If access denied: ensure the install command runs as SYSTEM and the installer does not require user interaction.
-2. If supersedence conflict: review app supersedence and dependency chains in **Apps > [App] > Properties > Supersedence**.
-3. Re-upload the `.intunewin` package if the content hash mismatch error appears.
-4. Force a sync from the device: **Settings > Accounts > Access work or school > Info > Sync**.
-
-**Key lesson:** Win32 apps run as SYSTEM by default. Interactive installers that display UI will hang silently.
-
----
-
-#### Scenario 3: Conditional Access Blocking a Compliant Device
-
-**Situation:** A senior partner's laptop shows Compliant in Intune but conditional access blocks access to SharePoint. The user is exempt from MFA.
-
-**Diagnosis steps:**
-1. In Entra ID, go to **Monitoring > Sign-in logs** and find the blocked sign-in. Expand **Conditional Access** tab.
-2. Identify which CA policy applied and what condition failed (e.g., compliant device, approved app).
-3. Check whether the device is showing in Entra ID as registered and hybrid-joined correctly.
-
-**Resolution:**
-1. If the device registration is stale, run `dsregcmd /status` on the device; re-run hybrid join if needed.
-2. If the CA policy has a conflicting grant control (e.g., requires approved client app AND compliant device as separate grants rather than either/or), update the grant logic.
-3. If the user is in an exclusion group that should be included, fix group membership.
-4. Use the **What If** tool in Conditional Access to simulate the user's sign-in and confirm expected policy behavior.
-
-**Key lesson:** Use the CA **What If** tool proactively before rolling out new policies to validate expected behavior.
-
----
-
-#### Scenario 4: iOS Devices Not Receiving Configuration Profiles
-
-**Situation:** A new VPN profile assigned to the **London-iOS-Devices** group is not appearing on 40 iOS devices. The group is correctly populated.
-
-**Diagnosis steps:**
-1. Check **Devices > Configuration profiles > [Profile] > Device status** to see which devices show *Not Applicable* vs *Pending*.
-2. Verify the assignment filter; if an assignment filter is applied, check whether the device properties match.
-3. Check the Apple APNs certificate expiration: **Tenant administration > Connectors and tokens > Apple MDM Push certificate**.
-
-**Resolution:**
-1. If APNs certificate expired: renew immediately with the same Apple ID used originally; all iOS/macOS management stops if APNs lapses.
-2. If filter mismatch: edit the assignment filter rule to include the device properties of the London fleet (e.g., `(device.manufacturer -eq "Apple") and (device.enrollmentProfileName -eq "London-ADE-Profile")`).
-3. Force an APNs push: **Devices > [Device] > Sync**.
-
-**Key lesson:** APNs certificate expiration silently breaks all iOS management. Set a calendar reminder 60 days before expiry.
-
----
-
-#### Scenario 5: Autopilot Deployment Fails at Enrollment Status Page
-
-**Situation:** New Windows 11 laptops for Contoso fail during the Autopilot OOBE at the Enrollment Status Page (ESP) with error `0x800705b4` (timeout).
-
-**Diagnosis steps:**
-1. Review the ESP log at `C:\Windows\ServiceProfiles\LocalService\AppData\Local\Temp\MdmDiagnostics`.
-2. Identify which tracking category timed out: Device setup vs. Account setup.
-3. Common causes: a large Win32 app with slow download, a PowerShell script exceeding timeout, or a certificate deployment failure.
-
-**Resolution:**
-1. If a Win32 app is causing the timeout: increase the ESP timeout (default 60 min) under **Enrollment > Enrollment Status Page > [Profile] > Settings > Time limit**.
-2. Move non-critical apps to post-ESP delivery by setting them as **Available** rather than **Required**, or excluding them from ESP tracking.
-3. If a PowerShell script times out: optimize the script or set `runAs = SYSTEM` with `enforceSignatureCheck = false` to remove signing overhead in the lab.
-4. Test by capturing an Autopilot diagnostics ZIP: at the OOBE failure screen, press `Shift+F10` to open cmd, then run `mdmdiagnosticstool.exe -out C:\autopilot-diag`.
-
-**Key lesson:** Always test ESP deployments in a pilot ring with a representative app and policy set before broad rollout.
-
----
-
-## Certification Preparation
-
-### MD-102: Endpoint Administrator Associate
-
-**Exam overview:**
-
-| Item | Detail |
+| Action | Description |
 |---|---|
-| Exam code | MD-102 |
-| Full name | Microsoft 365 Endpoint Administrator |
-| Passing score | 700 / 1000 |
-| Duration | 100 minutes |
-| Question types | Multiple choice, case studies, drag-and-drop, active screen |
-| Languages | English and others (see Microsoft Learn) |
-| Cost | USD $165 (varies by region) |
-| Renewal | Free online annual renewal assessment |
-
-### Exam Skill Areas
-
-| Domain | Weight |
-|---|---|
-| Deploy and manage Entra ID identities | ~15% |
-| Manage, maintain, and protect devices | ~40% |
-| Manage and protect apps | ~25% |
-| Plan and manage compliance and conditional access | ~20% |
-
-### Study Tips
-
-1. **Hands-on labs beat passive reading.** Microsoft Learn sandbox environments are free; use them for every topic.
-2. **Use Microsoft Learn skill measurements** (the built-in practice assessments on the exam page) to identify weak domains.
-3. **Read the official Study Guide** available on Microsoft Learn for MD-102; it maps directly to exam objectives.
-4. **Focus on "why" not just "how."** Exam questions frequently test reasoning (e.g., *which is the best option for this scenario*) rather than step-by-step recall.
-5. **Know the differences** between: Wipe vs Retire, MAM with enrollment vs without, Autopilot modes, co-management workloads.
-6. **Review change logs.** Intune updates monthly; check the [Intune What's New](https://learn.microsoft.com/en-us/mem/intune/fundamentals/whats-new) page regularly.
-7. **Take timed practice tests** to simulate exam pressure; aim for at least three full practice exams before sitting.
-
-### Practice Resources
-
-| Resource | URL / Location |
-|---|---|
-| Microsoft Learn – MD-102 path | `learn.microsoft.com/certifications/exams/md-102` |
-| Official practice assessment | Available free on the exam page |
-| Microsoft 365 Developer tenant (free 90-day) | `developer.microsoft.com/microsoft-365/dev-program` |
-| Intune documentation | `learn.microsoft.com/mem/intune` |
-| Endpoint Manager community | `techcommunity.microsoft.com/t5/microsoft-intune` |
-| MeasureUp practice exams (paid) | `measureup.com` |
-| Whizlabs / Udemy MD-102 courses | Various |
+| Sync | Force device to check in for policy updates |
+| Restart | Remotely reboot the device |
+| Collect diagnostics | Gather MDM logs remotely |
+| Fresh Start | Reinstall Windows while retaining user data |
+| Autopilot Reset | Reset to out-of-box state without reimaging |
+| Retire | Remove company data (MDM unenroll) |
+| Wipe | Factory reset the device |
 
 ---
 
-## Course Completion Checklist
+### 7. Common Enrollment Issues
 
-Use this checklist to confirm you have covered every major topic in the course before attempting the certification exam.
-
-### Module Coverage
-
-- [ ] **Module 01** – Explained the role of modern endpoint management and Microsoft Intune's place in the Microsoft 365 stack.
-- [ ] **Module 02** – Navigated the Intune admin center; understood licensing, tenants, and MDM authority.
-- [ ] **Module 03** – Configured Entra ID, Apple APNs, Android Enterprise, and Windows Autopilot prerequisites.
-- [ ] **Module 04** – Enrolled Windows, iOS, and Android devices using at least two enrollment methods each.
-- [ ] **Module 05** – Deployed Win32, Microsoft Store, LOB, and web apps; configured app protection policies.
-- [ ] **Module 06** – Created compliance policies, configured conditional access, applied endpoint security baselines.
-- [ ] **Module 07** – Used Remote Help and performed remote actions (sync, wipe, retire, reset passcode).
-- [ ] **Module 08** – Built custom reports, exported compliance data, reviewed Endpoint Analytics.
-- [ ] **Module 09** – Automated Intune tasks using Microsoft Graph PowerShell; explored Power Automate connectors.
-- [ ] **Module 10** – Applied enterprise best practices, reviewed a production-ready deployment checklist.
-- [ ] **Module 11** – Completed the Contoso capstone project across all five phases; scored ≥ 14/20 on practice questions.
-
-### Skills Verification
-
-- [ ] Can enroll a Windows device via Autopilot from scratch (hardware hash upload to first desktop).
-- [ ] Can create and assign a compliance policy with conditional access integration.
-- [ ] Can package and deploy a Win32 `.exe` application with detection rules.
-- [ ] Can configure an app protection policy for MAM-WE on iOS.
-- [ ] Can generate a device compliance report and export it to CSV.
-- [ ] Can write a PowerShell script using the Microsoft Graph SDK to list non-compliant devices.
-- [ ] Can troubleshoot a failed Autopilot deployment using ESP logs.
-- [ ] Can renew the Apple APNs certificate without disrupting existing enrollments.
+| Issue | Likely Cause | Resolution |
+|---|---|---|
+| "MDM enrollment failed" error | User not licensed for Intune | Assign Intune license to the user |
+| Device shows as "Not compliant" after enrollment | Compliance policy not yet evaluated | Wait 10–15 min; force sync if needed |
+| "Your organization's policies are preventing enrollment" | Enrollment restrictions blocking the device type or OS version | Review **Enrollment restrictions** in Intune |
+| Duplicate device records | Device re-enrolled without cleaning old record | Delete stale device record from Intune |
+| Hybrid Azure AD join not completing | ADFS or sync issues | Verify Azure AD Connect sync and ADFS health |
+| Autopilot device not found | Hardware hash not uploaded | Upload hardware hash via CSV or re-run Get-WindowsAutoPilotInfo |
+| Company Portal shows "Setup not complete" | Missing required apps or policies still deploying | Allow 30–60 minutes for initial deployment to complete |
 
 ---
 
-## Next Steps After Course Completion
+## Hands-On Labs
 
-1. **Schedule your MD-102 exam** at [Pearson VUE](https://home.pearsonvue.com/microsoft). Book 1–2 weeks out to maintain momentum.
-2. **Build a portfolio:** Document your Contoso capstone project with screenshots and architecture notes. This is valuable evidence for job applications and performance reviews.
-3. **Explore advanced paths:**
-   - **SC-300** – Microsoft Identity and Access Administrator (deepens Entra ID/conditional access skills)
-   - **SC-400** – Microsoft Information Protection Administrator (deepens data governance)
-   - **AZ-104** – Azure Administrator Associate (broadens cloud infrastructure skills)
-   - **MS-700** – Microsoft Teams Administrator (endpoint management intersects heavily with Teams devices)
-4. **Join the community:** The [Microsoft Tech Community – Intune](https://techcommunity.microsoft.com/t5/microsoft-intune) forum is where product engineers post updates and answer questions.
-5. **Set up Intune alerts** in your production tenant for certificate expiration, enrollment failures, and compliance drift so you stay ahead of issues proactively.
-6. **Review the Intune What's New page monthly** — Intune ships updates every month and exam content can reflect recent changes.
+### Lab 7.1: Install and Enable Remote Help
+
+**Objective:** Enable Remote Help at the tenant level and deploy the Remote Help application to a group of Windows devices.
+
+**Prerequisites:**
+- Intune Administrator role
+- A license that includes Remote Help (Intune Plan 2, Intune Suite, or add-on)
+- A test device group in Intune
+
+**Steps:**
+
+1. Sign in to the [Microsoft Intune admin center](https://intune.microsoft.com) with Global Administrator or Intune Administrator credentials.
+
+2. In the left navigation menu, click **Tenant administration**, then click **Remote Help** under the **Remote Help** section.
+
+3. On the **Settings** tab, locate the **Enable Remote Help** toggle and set it to **Enabled**.
+
+4. Review the **Allow Remote Help to unenrolled devices** option. For this lab, ensure it is set to **Disabled** to restrict Remote Help to managed devices only.
+
+5. Under **Disable chat**, leave it set to **Not configured** (chat enabled) for the lab environment.
+
+6. Click **Save** at the top of the page to apply the tenant settings.
+
+7. Navigate to **Apps** → **Windows** in the left menu.
+
+8. Click **+ Add** in the top action bar.
+
+9. In the **Select app type** pane, scroll to find **Microsoft app** under the **Other** section, then click **Select**.
+
+10. In the app search box, type **Remote Help** and select the **Remote Help** application from the results.
+
+11. Click **Next** through the **App information** page (defaults are pre-filled by Microsoft).
+
+12. On the **Assignments** tab, click **+ Add group** under **Required** and select your test Windows device group.
+
+13. Click **Next**, review the summary, then click **Create**.
+
+14. Verify the app deployment by navigating to **Devices** → **Windows** → select a test device → **Apps** and confirm Remote Help appears in the installed apps list after the device syncs (allow 15–30 minutes).
+
+**Expected Outcome:** Remote Help is enabled in the tenant and the Remote Help application is deployed to your test device group. The Remote Help app appears installed on target devices.
 
 ---
 
-*Congratulations on completing the Microsoft Intune Endpoint Administration course. You now have the knowledge, hands-on experience, and exam preparation to succeed as a Microsoft 365 Endpoint Administrator.*
+### Lab 7.2: Configure Roles and Permissions (RBAC)
+
+**Objective:** Create a custom Intune RBAC role with specific Remote Help permissions and assign it to a help desk security group.
+
+**Prerequisites:**
+- Intune Administrator or Global Administrator role
+- A security group representing your help desk team (e.g., `SG-HelpDesk-Tier1`)
+- A scope group containing the devices/users the help desk will support
+
+**Steps:**
+
+1. Sign in to the [Microsoft Intune admin center](https://intune.microsoft.com).
+
+2. Navigate to **Tenant administration** → **Roles** → **All roles**.
+
+3. Click **+ Create** to create a new custom role.
+
+4. On the **Basics** tab, enter the following:
+   - **Name:** `Help Desk - Remote Help Tier 1`
+   - **Description:** `Allows Tier 1 help desk staff to view and control end-user screens using Remote Help. No elevation permitted.`
+
+5. Click **Next** to proceed to the **Permissions** tab.
+
+6. In the permissions list, scroll to find the **Remote Help app** section and expand it.
+
+7. Enable the following permissions:
+   - ✅ **View screen** — set to **Yes**
+   - ✅ **Take full control** — set to **Yes**
+   - ❌ **Elevation** — leave set to **No** (Tier 1 should not have elevation rights)
+
+8. Optionally expand the **Remote tasks** section and enable **Collect diagnostics** and **Sync** to allow Tier 1 helpers to perform basic troubleshooting actions.
+
+9. Click **Next** to proceed to the **Scope (Tags)** tab. Leave scope tags as default for this lab, then click **Next**.
+
+10. On the **Review + create** tab, verify all settings, then click **Create**.
+
+11. From the **All roles** list, click the newly created role **Help Desk - Remote Help Tier 1**.
+
+12. Click **Assignments** → **+ Assign**.
+
+13. On the **Basics** tab of the assignment:
+    - **Assignment name:** `HelpDesk-Tier1-Assignment`
+    - **Members:** Select your help desk security group (`SG-HelpDesk-Tier1`)
+
+14. On the **Scope** tab, select the scope group representing the end users and devices this role should cover.
+
+15. Click **Next**, review, and click **Create**.
+
+16. Verify the assignment by signing in as a member of `SG-HelpDesk-Tier1` and navigating to the Intune admin center. Confirm that only the permitted actions are available.
+
+**Expected Outcome:** A custom RBAC role with Remote Help view and control permissions (but no elevation) is created and assigned to the help desk group. Members of that group can now use Remote Help within their assigned scope.
+
+---
+
+### Lab 7.3: Perform a Remote Assistance Session
+
+**Objective:** Initiate a Remote Help session between a helper (IT support) and a sharer (end user) using the Remote Help application and session code.
+
+**Prerequisites:**
+- Remote Help enabled in tenant (Lab 7.1 complete)
+- Remote Help app installed on the end-user device
+- Helper has an RBAC role with Remote Help permissions (Lab 7.2 complete)
+- Both helper and sharer are signed in with their Azure AD credentials
+
+**Steps:**
+
+1. **On the Helper's machine (IT support technician):**
+   Open the **Microsoft Intune admin center** and navigate to **Devices** → **Windows**.
+
+2. Locate the target device and click on it to open the device details page.
+
+3. In the device action bar at the top, click **New Remote Help session**. This will launch the Remote Help application (must be installed on the helper's device).
+
+   > Alternatively, the helper can open the **Remote Help** application directly from the Start menu and sign in with their Azure AD credentials.
+
+4. In the Remote Help app, click **Get a security code** (or **Help someone**). The app will generate an 8-character alphanumeric session code displayed on screen.
+
+5. **Share the session code** with the end user via phone, Teams message, or email. The session code is valid for a limited time (approximately 10 minutes).
+
+6. **On the Sharer's machine (end user):**
+   Open the **Remote Help** application from the Start menu or Company Portal. Sign in with Azure AD credentials when prompted.
+
+7. On the Remote Help welcome screen, click **Get help** and enter the 8-character session code provided by the helper.
+
+8. The end user will be prompted to choose:
+   - **View screen only** — helper can see but not interact
+   - **Full control** — helper can use mouse and keyboard
+
+   Select **Full control** for this lab and click **Share screen**.
+
+9. **Back on the Helper's machine:**
+   The helper will see a request notification. Accept the connection to begin the session.
+
+10. Verify the session is active:
+    - The sharer sees a **Remote Help** toolbar at the top of their screen indicating the session is live
+    - The helper can view and control the sharer's desktop
+
+11. Test the connection by opening **Notepad** on the sharer's device from the helper's interface.
+
+12. When finished, the helper clicks **Leave** or the sharer clicks **Stop sharing** in the Remote Help toolbar to end the session.
+
+13. Navigate to **Tenant administration** → **Remote Help** → **Session history** in the Intune admin center to verify the session was logged with timestamps, user names, and session duration.
+
+**Expected Outcome:** A successful Remote Help session is established between the helper and sharer. The helper can view and control the sharer's screen. The session is recorded in Intune's audit logs with full details.
+
+---
+
+### Lab 7.4: Troubleshoot Enrollment Issues
+
+**Objective:** Use Intune's built-in diagnostic tools, MDM logs, and remote actions to identify and resolve a simulated enrollment issue on a managed Windows device.
+
+**Prerequisites:**
+- A Windows device enrolled (or attempting to enroll) in Intune
+- Intune Administrator or Help Desk role with Collect Diagnostics permission
+- Access to the Intune admin center
+
+**Steps:**
+
+1. Sign in to the [Microsoft Intune admin center](https://intune.microsoft.com) and navigate to **Devices** → **Windows**.
+
+2. Locate the device experiencing the enrollment or compliance issue. Note its **Enrollment status**, **Compliance status**, and **Last check-in** time.
+
+3. Click on the device to open the **Device overview** pane. Review:
+   - **Enrollment type** — is it correctly enrolled (e.g., Azure AD Joined, Hybrid Joined)?
+   - **Compliance** — is it compliant or noncompliant, and which policies are failing?
+   - **Device configuration** — are profiles assigned and showing success or error?
+
+4. Click on the **Device configuration** tab to review each assigned profile. Identify any profiles showing **Error** or **Conflict** status. Note the profile name and error code.
+
+5. Return to the device overview and click **Sync** in the top action bar to force the device to check in immediately and re-evaluate all policies.
+
+6. After allowing 5–10 minutes for the sync to complete, refresh the device page and note whether compliance status has changed.
+
+7. If the issue persists, click **...** (More) in the top action bar and select **Collect diagnostics**. Confirm the action when prompted.
+
+8. Navigate to the **Device diagnostics** tab and wait for the diagnostic package to be uploaded (this may take 10–15 minutes if the device is online).
+
+9. Once available, click **Download** to save the diagnostic ZIP file to your local machine. Extract the archive and review:
+   - `MDMDiagReport.html` — primary diagnostic report with enrollment status
+   - `EventLog-Microsoft-Windows-DeviceManagement-Enterprise-Diagnostics-Provider*.evtx` — MDM event logs
+   - `PolicyLog.txt` — applied and failed policies
+
+10. On the affected **device itself**, open **Event Viewer** → **Applications and Services Logs** → **Microsoft** → **Windows** → **DeviceManagement-Enterprise-Diagnostics-Provider** → **Admin**. Look for errors related to enrollment or policy application.
+
+11. Cross-reference the error codes found in the logs with the [Intune enrollment troubleshooting guide](https://learn.microsoft.com/en-us/troubleshoot/mem/intune/device-enrollment/troubleshoot-device-enrollment-in-intune).
+
+12. If the device has a duplicate record (enrolled twice), navigate to **Devices** → **Windows**, filter by device name, and delete the stale/older record. Then perform a fresh sync on the current record.
+
+13. If an enrollment restriction is blocking the device, navigate to **Devices** → **Enrollment** → **Enrollment restrictions** and review the **Device type restrictions** and **Device limit restrictions** to ensure the device type and OS version are permitted.
+
+14. Document your findings: record the error code, root cause, and resolution steps taken.
+
+**Expected Outcome:** You can locate the source of an enrollment or compliance issue using Intune diagnostic logs, successfully download and interpret the diagnostic package, and apply the appropriate fix (sync, delete stale record, update restrictions). The device shows as compliant and fully enrolled after remediation.
+
+---
+
+## Best Practices
+
+### Do's ✅
+
+- ✅ **Always verify the helper's identity** before sharing a session code — use a trusted channel (Teams call, verified email) to share codes
+- ✅ **Use scope groups** in RBAC assignments to limit help desk staff to only their assigned users and devices
+- ✅ **Enable session logging** and periodically review Remote Help session history for unauthorized access patterns
+- ✅ **Use view-only mode** when demonstrating something to a user; reserve full control for active troubleshooting
+- ✅ **Train users** to verify the identity of the person requesting remote access before accepting a session
+- ✅ **Collect diagnostics before troubleshooting** to establish a baseline and avoid trial-and-error fixes
+- ✅ **Force a device sync** before collecting diagnostics to ensure the most current policy state is captured
+- ✅ **Document all remote sessions** with a ticket number or case ID for audit and compliance tracking
+- ✅ **Revoke elevated permissions** from help desk roles unless explicitly required for their support tier
+- ✅ **Test Remote Help deployments** in a pilot group before rolling out org-wide
+
+### Don'ts ❌
+
+- ❌ **Never share session codes in public channels** (open Slack channels, shared email aliases, or unencrypted messaging)
+- ❌ **Do not enable Remote Help for unenrolled devices** unless you have a specific, documented business requirement
+- ❌ **Do not assign Intune Administrator role** to all help desk staff — create least-privilege custom roles instead
+- ❌ **Do not perform Remote Help sessions without the user's knowledge and consent** — always get explicit consent before connecting
+- ❌ **Do not skip log review** when an enrollment fix appears to work — confirm the root cause to prevent recurrence
+- ❌ **Do not delete active device records** in Intune without confirming the device is no longer in use
+- ❌ **Do not rely solely on Remote Help** for devices that may be offline — ensure out-of-band communication channels exist
+- ❌ **Do not grant elevation permissions to Tier 1 help desk** — reserve elevation for senior/Tier 2 administrators only
+- ❌ **Do not ignore duplicate device records** — they cause policy conflicts and compliance reporting inaccuracies
+- ❌ **Do not use Quick Assist as a substitute for Remote Help** in enterprise managed environments where audit logging is required
+
+---
+
+## Common Issues and Troubleshooting
+
+| Issue | Cause | Solution |
+|---|---|---|
+| Remote Help app does not launch | App not installed on helper's device | Deploy Remote Help app via Intune to the helper's device or download from [aka.ms/downloadremotehelp](https://aka.ms/downloadremotehelp) |
+| "Remote Help is not enabled for your organization" | Tenant setting not enabled | Navigate to **Tenant administration** → **Remote Help** → **Settings** and toggle **Enable Remote Help** to **Enabled** |
+| Session code expires before sharer enters it | Code was not used within ~10 minutes | Generate a new session code and share it promptly |
+| Helper cannot see sharer's screen after connecting | Sharer only granted view-only permission | Ask sharer to upgrade to full control by clicking **Allow full control** in the toolbar |
+| "You do not have permission to provide Remote Help" | Helper's RBAC role lacks Remote Help permissions | Review and update the custom role to include View Screen and Take Full Control permissions |
+| Remote Help app crashes immediately on launch | Outdated app version or missing Visual C++ runtime | Update Remote Help via Intune or manually; install latest Visual C++ Redistributable |
+| Collect Diagnostics action is greyed out | Device is offline or the helper lacks the **Collect diagnostics** remote task permission | Verify device is online; add Collect Diagnostics to the helper's RBAC role |
+| Device shows "Pending" compliance after enrollment | Compliance policy not yet evaluated | Allow 15–30 minutes; force sync; verify compliance policies are assigned to the user/device group |
+| MDM enrollment fails with error 80180026 | User-based enrollment blocked by enrollment restrictions | Check **Device type restrictions** and ensure Windows (MDM) enrollment is allowed for this user group |
+| Duplicate device entries in Intune | Device re-enrolled without removing old record | Filter devices by name, compare last check-in dates, and delete the stale record |
+| Hybrid Azure AD join device not appearing in Intune | Azure AD Connect sync issue or missing MDM URL in Group Policy | Verify Azure AD Connect sync health; check that the MDM enrollment GPO is applied correctly |
+| "Company Portal needs to be updated" on enrollment | Outdated Company Portal version on device | Push latest Company Portal update via Intune or Windows Store; verify update ring settings |
+
+---
+
+## Assessment Questions
+
+Test your understanding of Module 07 concepts.
+
+---
+
+**Question 1:** Which license is required for the **helper** (IT support staff) to use Remote Help, and does the **sharer** (end user) need the same license?
+
+<details>
+<summary>Answer</summary>
+
+The **helper** must have a license that includes Remote Help — this requires either **Microsoft Intune Plan 2**, the **Microsoft Intune Suite**, or the standalone **Remote Help add-on** for Intune Plan 1. The **sharer (end user) does NOT need a Remote Help license** — they only need a standard Intune device management license. Only one side of the connection (the helper) requires the premium Remote Help entitlement.
+
+</details>
+
+---
+
+**Question 2:** Your Tier 1 help desk staff are reporting that they can see the end user's screen during a Remote Help session but cannot interact with the mouse or keyboard. What is the most likely cause?
+
+<details>
+<summary>Answer</summary>
+
+The most likely cause is that the **end user (sharer) only granted view-only permission** when accepting the Remote Help session — they selected "View screen only" instead of "Full control." The sharer can upgrade the permission during the session by clicking **Allow full control** in the Remote Help toolbar. Additionally, verify that the helper's RBAC role has the **Take full control** permission enabled — if not, update the custom role in Intune.
+
+</details>
+
+---
+
+**Question 3:** How would you force an enrolled Windows device to immediately re-evaluate all Intune policies without physically accessing the device?
+
+<details>
+<summary>Answer</summary>
+
+From the **Microsoft Intune admin center**, navigate to **Devices** → **Windows**, select the target device, and click the **Sync** action in the top action bar. This sends a push notification to the device requesting it check in with Intune immediately. The device will re-download and re-apply all assigned policies, compliance rules, and app assignments. If the device is online, it typically checks in within a few minutes. The user can also trigger a sync locally via **Settings** → **Accounts** → **Access work or school** → **Info** → **Sync**.
+
+</details>
+
+---
+
+**Question 4:** An end user reports that their device keeps showing as "Not enrolled" in the Company Portal despite going through the enrollment process twice. After checking the Intune admin center, you find two device records with the same name. What steps should you take?
+
+<details>
+<summary>Answer</summary>
+
+This is a **duplicate device record** issue. The steps to resolve it are:
+
+1. In the Intune admin center, navigate to **Devices** → **Windows** and search for the device name
+2. Compare the two records — check **Last check-in** time, **Enrollment date**, and **Compliance status**
+3. The record with the **older Last check-in** is likely the stale/orphaned record
+4. Delete the stale record by selecting it and clicking **Delete**
+5. On the device, navigate to **Settings** → **Accounts** → **Access work or school**, remove the existing work account, and re-enroll the device
+6. Force a **Sync** on the new record and verify that only one record appears in Intune with the correct compliance status
+
+</details>
+
+---
+
+**Question 5:** What is the key security advantage of using Remote Help over Windows Quick Assist in an enterprise Intune environment?
+
+<details>
+<summary>Answer</summary>
+
+Remote Help provides several critical security advantages over Quick Assist in an enterprise environment:
+
+- **Azure AD authentication required** — both the helper and sharer must authenticate with corporate Azure AD credentials; Quick Assist uses personal Microsoft Accounts with no corporate identity verification
+- **RBAC enforcement** — Remote Help respects Intune's Role-Based Access Control, ensuring only authorized support staff can connect; Quick Assist has no equivalent access control
+- **Full audit logging in Intune** — every Remote Help session is recorded in Intune with user identities, timestamps, duration, and actions taken; Quick Assist has no centralized audit trail
+- **Conditional Access compliance** — Remote Help respects Conditional Access policies, preventing connections from non-compliant devices; Quick Assist bypasses these controls
+- **Scope-based restrictions** — RBAC scope groups ensure help desk staff can only assist users and devices within their assigned scope
+
+</details>
+
+---
+
+## Key Resources
+
+- [Remote Help overview — Microsoft Learn](https://learn.microsoft.com/en-us/mem/intune/fundamentals/remote-help)
+- [Set up Remote Help for Microsoft Intune](https://learn.microsoft.com/en-us/mem/intune/fundamentals/remote-help-windows)
+- [Intune RBAC — Role-Based Access Control](https://learn.microsoft.com/en-us/mem/intune/fundamentals/role-based-access-control)
+- [Troubleshoot device enrollment in Intune](https://learn.microsoft.com/en-us/troubleshoot/mem/intune/device-enrollment/troubleshoot-device-enrollment-in-intune)
+- [Collect diagnostics from a Windows device](https://learn.microsoft.com/en-us/mem/intune/remote-actions/collect-diagnostics)
+- [MDM enrollment of Windows devices — Microsoft Learn](https://learn.microsoft.com/en-us/windows/client-management/mdm-enrollment-of-windows-devices)
+- [Intune Remote Help licensing add-on](https://learn.microsoft.com/en-us/mem/intune/fundamentals/intune-add-ons)
+- [Use Remote Help on macOS (preview)](https://learn.microsoft.com/en-us/mem/intune/fundamentals/remote-help-macos)
+- [Monitor and audit Remote Help sessions](https://learn.microsoft.com/en-us/mem/intune/fundamentals/remote-help#monitoring-and-reports)
+- [Intune remote actions for Windows devices](https://learn.microsoft.com/en-us/mem/intune/remote-actions/device-management)
+
+---
+
+## Next Steps
+
+Congratulations on completing **Module 07: Remote Help & Support**! You now have the knowledge and hands-on experience to deploy, configure, and operate Remote Help in a Microsoft Intune environment, and to effectively troubleshoot device enrollment and compliance issues using Intune's diagnostic toolset.
+
+**Continue your learning journey:**
+
+- 📘 **[Module 08: Windows Update Management](../Module-08-Windows-Update-Management/README.md)** — Learn how to manage Windows Updates using Intune Update Rings and Windows Autopatch
+- 📘 **[Module 09: Endpoint Security & Microsoft Defender](../Module-09-Endpoint-Security/README.md)** — Configure Endpoint Security policies, Microsoft Defender Antivirus, and Attack Surface Reduction rules
+- 📘 **[Module 10: Reporting & Monitoring](../Module-10-Reporting-Monitoring/README.md)** — Master Intune's built-in reporting, Azure Monitor integration, and operational dashboards
+
+**Recommended hands-on practice:**
+
+1. Set up a Remote Help pilot with 5–10 users in a dedicated test group before production rollout
+2. Review your existing help desk RBAC roles and audit whether elevation permissions are correctly scoped
+3. Practice the full diagnostic collection workflow on a non-production device
+4. Create a runbook or SOP document for your help desk team based on the troubleshooting steps in this module
+
+> 💡 **Pro Tip:** Schedule a quarterly review of Remote Help session logs in the Intune admin center to identify support patterns, recurring issues, and opportunities to proactively address common problems through policy or user education.
