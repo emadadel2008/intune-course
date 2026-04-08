@@ -1,5 +1,9 @@
 # Microsoft Intune Training Course - Complete Lab Guide
 
+<p align="center">
+  <img src="./assets/images/course-banner.svg" alt="Microsoft Intune Complete Training Course" width="100%"/>
+</p>
+
 [![Course Status](https://img.shields.io/badge/Status-Active-success)](https://github.com)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Modules](https://img.shields.io/badge/Modules-11-orange)](README.md)
@@ -7,6 +11,18 @@
 ## 📋 Course Overview
 
 This comprehensive Microsoft Intune training course provides hands-on labs and practical experience with Microsoft Endpoint Manager. From fundamentals to advanced scenarios, this course prepares you for real-world Intune deployments and certifications like MD-102 and MS-101.
+
+## 🗺️ Learning Path
+
+<p align="center">
+  <img src="./assets/images/learning-path.svg" alt="Course Learning Path — 11 Modules from Foundation to Certification" width="100%"/>
+</p>
+
+## 🏗️ Intune Ecosystem Architecture
+
+<p align="center">
+  <img src="./assets/images/intune-architecture.svg" alt="Microsoft Intune Ecosystem Architecture Diagram" width="100%"/>
+</p>
 
 ## 🎯 What You'll Learn
 
