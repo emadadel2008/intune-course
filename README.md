@@ -99,7 +99,7 @@ This comprehensive Microsoft Intune training course provides hands-on labs and p
   - Lab 8.3: Create Custom Report with Log Analytics
   - Lab 8.4: Monitor Application Installation Status
 
-### [Module 9 - Integrations & Advanced Scenarios](./Module-09-Integrations-Advanced)
+### [Module 9 - Integrations & Advanced Scenarios](./Module-09-Integrations-Automation)
 - Windows Autopilot
 - Microsoft Purview Integration
 - PowerShell and Graph API Automation
@@ -120,7 +120,7 @@ This comprehensive Microsoft Intune training course provides hands-on labs and p
   - Lab 10.3: Troubleshoot Application Installation Failure
   - Lab 10.4: Review and Audit Security Policies
 
-### [Module 11 - Capstone Project & Certification](./Module-11-Capstone-Project)
+### [Module 11 - Capstone Project & Certification](./Module-11-Capstone)
 - Complete Lab Build
 - Comprehensive Practical Project
 - Certification Preparation
