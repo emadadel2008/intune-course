@@ -1,0 +1,31 @@
+/* ──────────────────────────────────────────────
+   Microsoft Intune Course — custom MkDocs styles
+   ────────────────────────────────────────────── */
+
+/* Rounded corners on banner images */
+.md-typeset img[alt*="Microsoft Intune"] {
+  border-radius: 8px;
+}
+
+/* Admonition colour overrides for lab steps */
+.md-typeset .admonition.lab,
+.md-typeset details.lab {
+  border-color: #0078d4;
+}
+.md-typeset .lab > .admonition-title,
+.md-typeset .lab > summary {
+  background-color: rgba(0, 120, 212, 0.1);
+}
+.md-typeset .lab > .admonition-title::before,
+.md-typeset .lab > summary::before {
+  background-color: #0078d4;
+  -webkit-mask-image: var(--md-admonition-icon--tip);
+          mask-image: var(--md-admonition-icon--tip);
+}
+
+/* Slightly wider content on large screens */
+@media screen and (min-width: 76.25em) {
+  .md-content {
+    max-width: 900px;
+  }
+}
