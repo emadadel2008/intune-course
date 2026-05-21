@@ -581,9 +581,9 @@ Congratulations on completing **Module 07: Remote Help & Support**! You now have
 
 **Continue your learning journey:**
 
-- 📘 **[Module 08: Windows Update Management](../Module-08-Windows-Update-Management/README.md)** — Learn how to manage Windows Updates using Intune Update Rings and Windows Autopatch
-- 📘 **[Module 09: Endpoint Security & Microsoft Defender](../Module-09-Endpoint-Security/README.md)** — Configure Endpoint Security policies, Microsoft Defender Antivirus, and Attack Surface Reduction rules
-- 📘 **[Module 10: Reporting & Monitoring](../Module-10-Reporting-Monitoring/README.md)** — Master Intune's built-in reporting, Azure Monitor integration, and operational dashboards
+- 📘 **[Module 08: Reporting & Analytics](../08-reporting-analytics/index.md)** — Learn how to manage Windows Updates using Intune Update Rings and Windows Autopatch
+- 📘 **[Module 09: Integrations & Automation](../09-integrations-automation/index.md)** — Configure Endpoint Security policies, Microsoft Defender Antivirus, and Attack Surface Reduction rules
+- 📘 **[Module 10: Best Practices](../10-best-practices/index.md)** — Master Intune's built-in reporting, Azure Monitor integration, and operational dashboards
 
 **Recommended hands-on practice:**
 

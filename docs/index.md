@@ -5,7 +5,7 @@
 </p>
 
 [![Course Status](https://img.shields.io/badge/Status-Active-success)](https://github.com)
-[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-red.svg)](../LICENSE)
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-red.svg)](https://github.com/emadadel2008/intune-course/blob/main/LICENSE)
 [![Modules](https://img.shields.io/badge/Modules-11-orange)](#course-structure)
 
 ## 📋 Course Overview

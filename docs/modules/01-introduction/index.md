@@ -650,7 +650,7 @@ In **Module 2 - Intune Fundamentals**, you'll learn:
 ---
 
 **Module Status**: ✅ Complete  
-**Next Module**: [Module 2 - Intune Fundamentals](../Module-02-Intune-Fundamentals/README.md)
+**Next Module**: [Module 2 - Intune Fundamentals](../02-intune-fundamentals/index.md)
 
 ---
 
