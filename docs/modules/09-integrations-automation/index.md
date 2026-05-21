@@ -957,7 +957,7 @@ You have completed **Module 09: Integrations & Advanced Automation**. You are no
 - Build and troubleshoot direct Graph API integrations for custom tooling
 - Design cloud-native automation pipelines using Azure Automation, Logic Apps, and Power Automate
 
-**Proceed to [Module 10: Best Practices & Governance](../Module-10-Best-Practices/README.md)** to learn how to operationalise everything covered in this course — including role-based access control, change management, update ring strategies, and long-term Intune governance frameworks.
+**Proceed to [Module 10: Best Practices & Governance](../10-best-practices/index.md)** to learn how to operationalise everything covered in this course — including role-based access control, change management, update ring strategies, and long-term Intune governance frameworks.
 
-If you want to reinforce the skills from this module before moving on, revisit **[Module 06: Security & Compliance](../Module-06-Security-Compliance/README.md)** to review how compliance policies interact with the Conditional Access and DLP integrations introduced here.
+If you want to reinforce the skills from this module before moving on, revisit **[Module 06: Security & Compliance](../06-security-compliance/index.md)** to review how compliance policies interact with the Conditional Access and DLP integrations introduced here.
 
